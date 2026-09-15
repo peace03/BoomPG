@@ -57,30 +57,37 @@
 - EditMode 테스트 12케이스 작성 완료 (`[Test]` 8 + `[TestCase]` 4)
 - `.inputactions` 에 `Reload` 액션 추가 완료
 
-### 이번에 할 일
+### 추가로 완료된 것 (MCP 라운드)
 
-**(1) `GameLog.cs` 의 `Conditional` 심볼 교체** — 유일한 코드 수정입니다.
+- `GameLog.cs` 의 `Conditional` 심볼을 `DEBUG` 로 교체 — `UAC0009` 경고 해소
+- 셋업 메뉴 실행 완료 — `SO_*.asset` 3개, `P_Rocket.prefab`, `M1_Greybox.unity` 생성
+- **EditMode 테스트 12개 전부 통과** (`KeepStronger` 포함 — D-022 대응 검증 완료)
+- `Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제 완료 (사람이 처리)
 
-Unity 6 에서 `DEVELOPMENT_BUILD` 가 deprecated 되어 컴파일 경고 `UAC0009` 가 4건 발생합니다.
-계획서의 지시가 틀렸던 것이므로 아래처럼 고칩니다.
+### 이번에 할 일 — **코드 수정 1건뿐입니다**
 
+**`RocketProjectile.cs` 의 레이어 마스크 초기화 위치를 옮기십시오.**
+
+현재 10~11행이 `static readonly` 필드 이니셜라이저에서 `LayerMask.GetMask` 와 `NameToLayer`
+를 호출해 런타임 예외가 발생합니다.
+
+```text
+UnityException: NameToLayer is not allowed to be called from a MonoBehaviour constructor
+(or instance field initializer), call it in Awake or Start instead.
+Called from MonoBehaviour 'RocketProjectile' on game object 'P_Rocket'.
 ```
-[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]   // 기존
-[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]               // 이렇게 바꾼다
-```
 
-`Core`·`Combat`·`Net`·`UI` 4개 메서드가 대상입니다. `Warn`·`Error` 는 원래 `Conditional` 이
-없으므로 건드리지 않습니다.
+계획서가 "`static readonly` 로 캐싱하라"고 지시했던 것이 원인이므로 계획서를 고쳤습니다.
+**Step 12 의 3번 항목에 적힌 `Awake` 초기화 방식으로 바꾸십시오.**
 
-**(2) 셋업 메뉴 실행** — `BoomPG/Setup/1. 기본 에셋 생성` → `BoomPG/Setup/2. M1 그레이박스 씬 생성`.
-MCP 로 메뉴를 실행할 수 없으면 "메뉴 실행 불가"라고 보고에 적고 넘어가십시오.
-
-**(3) EditMode 테스트 실행** — 6.1 절의 MCP 경로를 쓰십시오.
+수정 후 MCP 로 컴파일을 확인하고, EditMode 테스트를 다시 돌려 12개가 여전히 통과하는지
+확인한 뒤 보고하십시오.
 
 ### 손대지 말 것
 
-- `Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제 — 사람이 에디터에서 처리합니다
-- 이미 생성된 스크립트의 구조·시그니처 — (1) 의 심볼 교체 외에는 수정하지 마십시오
+- 위 1건 외의 어떤 스크립트도 수정하지 마십시오
+- `ProjectSettings/EditorBuildSettings.asset` — 씬 이동에 따라 Unity 가 자동 갱신한 것입니다.
+  정상적인 변경이므로 **되돌리지 마십시오**
 
 ## 1. 목표 (Goal)
 
@@ -617,8 +624,34 @@ public void Launch(Vector3 origin, Vector3 direction, GameObject owner, CombatCo
    로 포물선을 만들고 위치를 갱신한다.
 3. 충돌 검사는 이전 위치 → 새 위치 구간의 `Physics.Linecast` 로 한다.
    매 프레임 위치만 갱신하면 28 m/s 에서 얇은 벽을 통과한다.
-   충돌 마스크는 `Player | Platform` 이며, **클래스에 `static readonly` 로 한 번만 캐싱한다.**
-   `LayerMask.GetMask("Player", "Platform")` 을 매 프레임 호출하지 않는다 (문자열 조회 비용).
+   충돌 마스크는 `Player | Platform` 이다. 매 프레임 `LayerMask.GetMask` 를 호출하지 않되,
+   **`static readonly` 필드 이니셜라이저로 만들지 마십시오.**
+
+   ```csharp
+   // 이렇게 하면 안 된다 — MonoBehaviour 인스턴스 생성 시점에 예외가 난다
+   private static readonly int CollisionMask = LayerMask.GetMask("Player", "Platform");
+   ```
+
+   `LayerMask.GetMask` 와 `NameToLayer` 는 `MonoBehaviour` 의 생성자·필드 이니셜라이저에서
+   호출할 수 없다 (`UnityException: NameToLayer is not allowed to be called from a
+   MonoBehaviour constructor`). **`Awake` 에서 초기화한다.**
+
+   ```csharp
+   private static int _collisionMask = -1;
+   private static int _playerLayer = -1;
+
+   private void Awake()
+   {
+       if (_collisionMask < 0)
+       {
+           _collisionMask = LayerMask.GetMask("Player", "Platform");
+           _playerLayer = LayerMask.NameToLayer("Player");
+       }
+   }
+   ```
+
+   `static` 을 유지하므로 로켓이 여러 개 생겨도 계산은 한 번뿐이다.
+   Step 13의 `ExplosionResolver` 는 `MonoBehaviour` 가 아닌 정적 클래스라 이 제약을 받지 않는다.
 4. 충돌 시 `ExplosionResolver.Resolve(...)` 를 호출하고 자신을 `Destroy` 한다.
    충돌한 콜라이더가 `Player` 레이어면 그 `GameObject` 를 `directHitTarget` 으로 넘기고,
    아니면 `null` 을 넘긴다.
@@ -828,7 +861,8 @@ so.ApplyModifiedProperties();
 - [x] `Assets/_Project/` 로 이동 완료, `.meta` 짝 일치 (Step 1 — 검증 완료)
 - [x] `Assets/_Project/Settings/` 에 `PC_*` 와 `Mobile_*` URP 에셋이 모두 남아 있다
 - [x] `ProjectSettings/QualitySettings.asset` 이 변경되지 않았다
-- [ ] ~~`Assets/TutorialInfo`, `Assets/Readme.asset` 삭제~~ — 범위 밖 (사람이 Unity에서 처리)
+- [x] `Assets/TutorialInfo`, `Assets/Readme.asset` 삭제 (사람이 Unity에서 처리 — 완료)
+- [x] `Assets/` 바로 아래에 `_Project` 와 `_Project.meta` 만 남음
 - [ ] asmdef 6개가 존재하고 참조 목록이 3장 표와 일치한다
 - [ ] `BoomPG.Gameplay.asmdef` 의 참조에 `BoomPG.Network` 가 **없다**
 - [ ] `TagManager.asset` 8~13번에 `Player`, `Platform`, `Rocket`, `Pickup`, `KillZone`, `Grapple` 이 등록돼 있다
