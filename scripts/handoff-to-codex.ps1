@@ -11,6 +11,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# --- 인코딩: PS 5.1 기본값이면 한글이 전부 '?' 로 깨진다 ---
+# $OutputEncoding 은 네이티브 exe 로 '파이프'할 때 쓰이는 인코딩이며 5.1 기본값이 ASCII 다.
+# 이걸 UTF-8 로 올리지 않으면 계획서 전문이 물음표로 바뀐 채 Codex 에게 전달된다.
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+$OutputEncoding = $utf8NoBom
+try { [Console]::OutputEncoding = $utf8NoBom } catch { }
+
 # --- 사전 점검 (DryRun은 codex 없이도 동작) ---
 if (-not $DryRun -and -not (Get-Command codex -ErrorAction SilentlyContinue)) {
     Write-Host "codex CLI 를 찾을 수 없습니다." -ForegroundColor Red
