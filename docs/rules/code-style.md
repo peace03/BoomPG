@@ -115,8 +115,10 @@ Assets/_Project/
 **`Debug.Log`를 직접 호출하지 않습니다.** `BoomPG.Core.Logging.GameLog` 정적 클래스를 거칩니다.
 
 - 카테고리별 진입점: `GameLog.Core`, `GameLog.Combat`, `GameLog.Net`, `GameLog.UI`
-- 각 카테고리 메서드에 `[Conditional("UNITY_EDITOR")]` 와 `[Conditional("DEVELOPMENT_BUILD")]` 를
+- 각 카테고리 메서드에 `[Conditional("UNITY_EDITOR")]` 와 `[Conditional("DEBUG")]` 를
   붙여 **릴리즈 빌드에서 호출 자체가 사라지게** 합니다. 인자 문자열 조립 비용까지 제거됩니다.
+  **`DEVELOPMENT_BUILD` 를 쓰지 마십시오** — Unity 6에서 deprecated 되어 컴파일 경고
+  `UAC0009` 가 발생합니다. 개발 빌드 판별이 런타임에 필요하면 `Debug.isDebugBuild` 를 씁니다.
 - 경고·에러(`GameLog.Warn`, `GameLog.Error`)는 `Conditional`을 **붙이지 않습니다.**
   릴리즈에서도 남아야 합니다.
 - 출력 형식: `[역할][카테고리] 메시지` — 예: `[H][Combat] 넉백 18.0 m/s 적용`
@@ -155,3 +157,5 @@ Assets/_Project/
 |---|---|
 | 2026-09-14 | 최초 작성. 미결정 D-001 ~ D-003 등록 |
 | 2026-09-14 | ADR-0005 채택. D-001(폴더 구조) · D-002(asmdef 분리) · D-003(로깅 래퍼) 해소 |
+| 2026-09-15 | PowerShell 파이프 인코딩 규칙 추가 |
+| 2026-09-15 | 로깅 `Conditional` 심볼을 `DEVELOPMENT_BUILD` → `DEBUG` 로 교체 (Unity 6 deprecated) |

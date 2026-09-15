@@ -41,24 +41,46 @@
 - 변수명·내부 헬퍼 분리처럼 계획서가 시그니처를 특정하지 않은 세부 — `docs/rules/code-style.md`
   범위 안에서 판단해 구현하십시오
 
-## 0.1 진행 상황 — **Step 2부터 시작하십시오** (2026-09-15 갱신)
+## 0.1 진행 상황 — **이번에 할 일은 아래 3가지뿐입니다** (2026-09-15 갱신)
 
-**Step 1(폴더 이동)은 이미 완료되었습니다. 다시 실행하지 마십시오.**
+**Step 1 ~ Step 15 의 파일 생성은 모두 끝났고, Unity 에디터에서 컴파일도 통과했습니다.**
+스크립트를 처음부터 다시 만들지 마십시오.
 
-아키텍트가 결과를 검증한 내용:
+아키텍트가 검증 완료한 것:
 
-- `Assets/_Project/` 이하 폴더 구조 생성 완료
-- `Scenes/`, `Settings/`, `InputSystem_Actions.inputactions` 이동 완료
-- **모든 파일의 `.meta` 짝이 맞고 고아 `.meta` 가 없음을 확인함** (GUID 참조 무사)
-- `Mobile_*` URP 에셋 보존 확인, `ProjectSettings/QualitySettings.asset` 무변경 확인
+- `Assets/_Project/` 이동 완료, `.meta` 짝 일치, 고아 `.meta` 없음 (GUID 참조 무사)
+- `Mobile_*` URP 에셋 보존, `ProjectSettings/QualitySettings.asset` 무변경
+- asmdef 6개 생성, 참조 목록이 3장 표와 일치, **`Gameplay` → `Network` 참조 없음**
+- 레이어 8~13 등록 완료
+- `PlayerMotor.ApplyKnockback` 이 `KnockbackCalculator.Blend` 를 경유 (D-022 대응 성립)
+- `GameLog.cs` 외 `Debug.Log` 직접 호출 없음, public 필드 없음, `Rigidbody` 미사용
+- EditMode 테스트 12케이스 작성 완료 (`[Test]` 8 + `[TestCase]` 4)
+- `.inputactions` 에 `Reload` 액션 추가 완료
 
-`Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제는 **샌드박스 정책상 거부되므로 시도하지
-마십시오.** 사람이 Unity 에디터에서 처리합니다 (7장 범위 밖으로 옮겼습니다).
-이 둘이 남아 있어도 이후 스텝에 영향이 없습니다 — `ReadmeEditor.cs` 는 `Editor` 폴더 안에 있어
-에디터 어셈블리로만 컴파일되고 게임 코드와 충돌하지 않습니다.
+### 이번에 할 일
 
-`Assets/_Project/` 와 그 하위 폴더에는 아직 `.meta` 가 없습니다. Unity 를 처음 열 때
-자동 생성되므로 **직접 만들지 마십시오.**
+**(1) `GameLog.cs` 의 `Conditional` 심볼 교체** — 유일한 코드 수정입니다.
+
+Unity 6 에서 `DEVELOPMENT_BUILD` 가 deprecated 되어 컴파일 경고 `UAC0009` 가 4건 발생합니다.
+계획서의 지시가 틀렸던 것이므로 아래처럼 고칩니다.
+
+```
+[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]   // 기존
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]               // 이렇게 바꾼다
+```
+
+`Core`·`Combat`·`Net`·`UI` 4개 메서드가 대상입니다. `Warn`·`Error` 는 원래 `Conditional` 이
+없으므로 건드리지 않습니다.
+
+**(2) 셋업 메뉴 실행** — `BoomPG/Setup/1. 기본 에셋 생성` → `BoomPG/Setup/2. M1 그레이박스 씬 생성`.
+MCP 로 메뉴를 실행할 수 없으면 "메뉴 실행 불가"라고 보고에 적고 넘어가십시오.
+
+**(3) EditMode 테스트 실행** — 6.1 절의 MCP 경로를 쓰십시오.
+
+### 손대지 말 것
+
+- `Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제 — 사람이 에디터에서 처리합니다
+- 이미 생성된 스크립트의 구조·시그니처 — (1) 의 심볼 교체 외에는 수정하지 마십시오
 
 ## 1. 목표 (Goal)
 
@@ -254,16 +276,16 @@ public enum LogRole { Unknown, Host, Client }
 
 public static void SetRole(LogRole role);
 
-[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
 public static void Core(string message);
 
-[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
 public static void Combat(string message);
 
-[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
 public static void Net(string message);
 
-[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+[Conditional("UNITY_EDITOR"), Conditional("DEBUG")]
 public static void UI(string message);
 
 public static void Warn(string category, string message);
@@ -895,6 +917,9 @@ MCP 쓰기 툴은 샌드박스 제한을 받지 않습니다. **계획서 범위
 - **`Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제** — 샌드박스 정책이 파일 삭제를
   거부한다. 사람이 Unity 에디터의 Project 창에서 지운다 (에디터가 `.meta` 까지 함께 정리한다).
   **삭제를 다시 시도하지 마십시오.** 남아 있어도 이후 스텝에 영향이 없다
+- **`ProjectSettings/ProjectSettings.asset` 의 `activeInputHandler`** — 현재 `2`(Both) 라서
+  "Input Manager is marked for deprecation" 경고가 뜬다. Input System 전용(`1`)으로 바꾸려면
+  에디터 재시작이 필요하고 M1 목적과 무관하다. **건드리지 마십시오.** 별도 작업으로 분리한다
 
 **건드리면 안 되는 것**
 
