@@ -1,0 +1,12 @@
+{
+    "name": "BoomPG.Editor",
+    "references": [
+        "BoomPG.Core",
+        "BoomPG.Gameplay",
+        "BoomPG.Network",
+        "BoomPG.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

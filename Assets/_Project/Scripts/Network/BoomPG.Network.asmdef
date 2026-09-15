@@ -1,0 +1,7 @@
+{
+    "name": "BoomPG.Network",
+    "references": [
+        "BoomPG.Core",
+        "BoomPG.Gameplay"
+    ]
+}

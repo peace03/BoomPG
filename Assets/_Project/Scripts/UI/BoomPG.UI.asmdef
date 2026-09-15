@@ -1,0 +1,7 @@
+{
+    "name": "BoomPG.UI",
+    "references": [
+        "BoomPG.Core",
+        "BoomPG.Gameplay"
+    ]
+}

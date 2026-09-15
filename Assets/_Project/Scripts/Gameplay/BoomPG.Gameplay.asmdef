@@ -1,0 +1,7 @@
+{
+    "name": "BoomPG.Gameplay",
+    "references": [
+        "BoomPG.Core",
+        "Unity.InputSystem"
+    ]
+}
