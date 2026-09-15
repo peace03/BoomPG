@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e40bc97054179dd41a9c6571003d7395, type: 3}
+  m_Name: SO_CombatConfig
+  m_EditorClassIdentifier: BoomPG.Gameplay::BoomPG.Gameplay.Config.CombatConfig
+  _rocketSpeed: 28
+  _rocketGravityScale: 0.35
+  _reloadSeconds: 2.2
+  _explosionRadius: 4.5
+  _directHitDamage: 35
+  _directHitKnockback: 14
+  _splashBands:
+  - _maxDistance: 1
+    _damage: 20
+    _knockbackSpeed: 18
+  - _maxDistance: 2.5
+    _damage: 12
+    _knockbackSpeed: 13
+  - _maxDistance: 4
+    _damage: 6
+    _knockbackSpeed: 8
+  - _maxDistance: 4.5
+    _damage: 3
+    _knockbackSpeed: 4
+  _knockbackUpMin: 0.35
+  _selfDamageRatio: 0.5
+  _selfKnockbackRatio: 1
+  _blendMode: 0
+  _maxKnockbackSpeed: 25
