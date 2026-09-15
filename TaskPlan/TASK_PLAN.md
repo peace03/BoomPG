@@ -99,7 +99,17 @@ EditMode 테스트)을 이번에 함께 세워 이후 모든 작업이 같은 �
 | `Scripts/Gameplay/World/KillZoneTrigger.cs` | 낙사 판정 |
 | `Scripts/Gameplay/Camera/ThirdPersonCamera.cs` | 3인칭 카메라 |
 | `Scripts/Tests/EditMode/KnockbackCalculatorTests.cs` | 넉백 계산 테스트 |
-| `Scripts/Editor/M1SetupMenu.cs` | 설정 에셋·그레이박스 씬 생성 메뉴 |
+| `Scripts/Editor/M1SetupMenu.cs` | 설정 에셋·로켓 프리팹·그레이박스 씬 생성 메뉴 |
+
+### 신규 — 에셋 (Step 15의 에디터 메뉴가 코드로 생성한다)
+
+| 경로 | 내용 |
+|---|---|
+| `Assets/_Project/Data/SO_MovementConfig.asset` | 이동 수치 |
+| `Assets/_Project/Data/SO_CombatConfig.asset` | 전투·넉백 수치 |
+| `Assets/_Project/Data/SO_JetpackConfig.asset` | 제트팩 수치 |
+| `Assets/_Project/Prefabs/P_Rocket.prefab` | 로켓 프리팹 |
+| `Assets/_Project/Scenes/M1_Greybox.unity` | 그레이박스 씬 |
 
 ### 수정
 
@@ -165,10 +175,20 @@ Editor / Tests
 - 대상: 3장 "신규 — 어셈블리 정의" 표의 6개 파일
 - 변경: 각 폴더에 asmdef를 만든다. `name` 은 파일명과 동일하게 한다.
   - `BoomPG.Editor.asmdef` 는 `"includePlatforms": ["Editor"]` 를 넣는다.
-  - `BoomPG.Tests.EditMode.asmdef` 는 `"includePlatforms": ["Editor"]` 와
-    `"references"` 에 `UnityEngine.TestRunner`, `UnityEditor.TestRunner` 를 넣고,
-    `"optionalUnityReferences": ["TestAssemblies"]` 대신 Unity 6 방식인
-    `"defineConstraints": ["UNITY_INCLUDE_TESTS"]` 를 넣는다.
+  - `BoomPG.Tests.EditMode.asmdef` 는 아래 형태여야 한다. `precompiledReferences` 의
+    `nunit.framework.dll` 과 `overrideReferences: true` 가 **둘 다 있어야** NUnit 을 찾는다.
+    하나라도 빠지면 `Assert` 에서 컴파일 에러가 난다.
+
+    ```json
+    {
+        "name": "BoomPG.Tests.EditMode",
+        "references": ["BoomPG.Core", "BoomPG.Gameplay", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+        "includePlatforms": ["Editor"],
+        "overrideReferences": true,
+        "precompiledReferences": ["nunit.framework.dll"],
+        "defineConstraints": ["UNITY_INCLUDE_TESTS"]
+    }
+    ```
   - `BoomPG.Gameplay.asmdef` 의 참조에 `Unity.InputSystem` 을 넣는다.
 - **참조 표를 임의로 늘리지 말 것.** 구현 중 "참조가 안 된다"는 이유로 `BoomPG.Gameplay` 에
   다른 어셈블리를 추가해야 할 것 같으면, 그것은 레이어 원칙을 어기려는 신호다.
@@ -286,7 +306,13 @@ public enum KnockbackBlendMode { Additive, KeepStronger, AdditiveDamped }
 | 4.0 | 6 | 8 |
 | 4.5 | 3 | 4 |
 
+**위 기본값은 전부 `[SerializeField]` 필드 이니셜라이저로 코드에 박는다.**
+`SplashBands` 배열도 마찬가지로 4개 원소를 이니셜라이저로 채운다.
+이렇게 해야 `ScriptableObject.CreateInstance<CombatConfig>()` 만으로 기본값이 채워진 인스턴스를
+얻을 수 있고, Step 7의 테스트가 별도 설정 없이 돌아간다.
+
 - 완료 기준: 3개 SO 클래스가 컴파일되고, Unity 메뉴 `Assets > Create > BoomPG` 에 3개 항목이 보인다.
+  `ScriptableObject.CreateInstance<CombatConfig>().SplashBands.Length == 4` 이다.
 
 ### Step 6 — `KnockbackCalculator` (넉백 순수 계산)
 
@@ -341,10 +367,10 @@ return dir.normalized;
 
 - 대상: `Assets/_Project/Scripts/Tests/EditMode/KnockbackCalculatorTests.cs`
 - 네임스페이스: `BoomPG.Tests.EditMode`
-- `CombatConfig` 인스턴스는 `ScriptableObject.CreateInstance<CombatConfig>()` 로 만들고,
-  기본값을 쓰기 어려우면 테스트용 세터를 추가하지 말고 **리플렉션 대신** `CombatConfig` 에
-  `internal static CombatConfig CreateForTests(...)` 정적 팩토리를 추가해 쓴다.
-  이 팩토리는 `#if UNITY_INCLUDE_TESTS` 로 감싼다.
+- `CombatConfig` 인스턴스는 `ScriptableObject.CreateInstance<CombatConfig>()` 로 만든다.
+  Step 5에서 기본값을 필드 이니셜라이저로 넣었으므로 **추가 설정 없이 그대로 쓸 수 있다.**
+  테스트 전용 팩토리나 세터를 만들지 말고, 리플렉션도 쓰지 않는다.
+  `[SetUp]` 에서 만들고 `[TearDown]` 에서 `ScriptableObject.DestroyImmediate` 로 정리한다.
 - 아래 케이스를 모두 작성한다.
 
 | # | 대상 | 입력 | 기대 |
@@ -368,19 +394,21 @@ return dir.normalized;
 ### Step 8 — 입력 액션 정리
 
 - 대상: `Assets/_Project/Settings/InputSystem_Actions.inputactions`
-- 변경: `Player` 액션 맵에 아래 액션이 있어야 한다. 템플릿에 이미 있는 것은 그대로 쓰고,
-  없는 것만 추가한다. **Touch·Gamepad·XR 관련 컨트롤 스킴과 바인딩은 전부 삭제한다**
-  (PC 단독 — ADR-0002). `Keyboard&Mouse` 스킴만 남긴다.
+- **기존 파일의 구조를 최대한 그대로 둔다.** 이 파일은 Unity 템플릿이 만든 JSON이고,
+  액션·바인딩·컨트롤 스킴을 손으로 지우면 참조가 깨지기 쉽다. M1 목적(넉백 검증)과도 무관하다.
 
-| 액션 | 타입 | 바인딩 |
-|---|---|---|
-| `Move` | Value (Vector2) | WASD |
-| `Look` | Value (Vector2) | Mouse Delta |
-| `Jump` | Button | Space |
-| `Fire` | Button | Mouse Left |
-| `Reload` | Button | R |
+현재 `Player` 맵에 이미 있는 액션 (확인 완료):
+`Move`, `Look`, `Attack`, `Interact`, `Crouch`, `Jump`, `Previous`, `Next`, `Sprint`
 
-- 완료 기준: `.inputactions` 에 위 5개 액션과 `Keyboard&Mouse` 스킴만 존재한다.
+- 변경 내용은 **딱 하나다**: `Player` 맵에 `Reload` 액션(Button)을 추가하고 키보드 `R` 에 바인딩한다.
+- **`Fire` 라는 새 액션을 만들지 않는다.** 이미 있는 `Attack` 을 발사에 그대로 쓴다.
+  `Attack` 의 바인딩에 마우스 좌클릭(`<Mouse>/leftButton`)이 있는지 확인하고, 없을 때만 추가한다.
+- `Interact`·`Crouch`·`Previous`·`Next`·`Sprint` 는 M1에서 쓰지 않지만 **지우지 않는다.**
+  Touch·Gamepad·XR 컨트롤 스킴과 바인딩도 **그대로 둔다** — PC에서 해가 없다.
+  정리는 별도 작업으로 미룬다 (7장 범위 밖).
+
+- 완료 기준: `Player` 맵에 `Reload` 액션이 존재하고 `R` 키에 바인딩돼 있다.
+  기존 액션이 하나도 사라지지 않았다. Unity 에디터에서 파일을 열었을 때 파싱 에러가 없다.
 
 ### Step 9 — `PlayerMotor`
 
@@ -391,12 +419,21 @@ return dir.normalized;
 ```csharp
 public bool IsGrounded { get; }
 public Vector3 ExternalVelocity { get; }
-public void SetMoveInput(Vector2 input);          // 카메라 기준 정규화 입력
+
+/// <summary>이동 입력. 카메라 yaw 로 이미 변환된 <b>월드 XZ 단위 방향</b>을 받는다.</summary>
+public void SetMoveInput(Vector3 worldDirection);
 public void RequestJump();
 public void ApplyKnockback(Vector3 velocity, bool isPull = false);
-public void SetVerticalVelocity(float value);     // 제트팩이 상승 속도를 덮어쓸 때
-public void SetHorizontalAssist(Vector3 velocity); // 제트팩 공중 수평 이동
+public void SetVerticalVelocity(float value);      // 제트팩이 상승 속도를 덮어쓸 때 (m/s)
+public void SetHorizontalAssist(Vector3 velocity); // 제트팩 공중 수평 이동 (m/s)
+
+/// <summary>누적 속도를 전부 0으로. 리스폰 시 호출한다 (Step 11).</summary>
+public void ResetVelocity();
 ```
+
+`SetMoveInput` 이 **Vector2 가 아니라 월드 방향 Vector3** 인 이유: 카메라 기준 변환을
+`PlayerInputRelay`(Step 14)가 담당하므로, `PlayerMotor` 는 카메라를 알 필요가 없다.
+더미 캐릭터처럼 입력이 없는 개체도 같은 컴포넌트를 그대로 쓴다.
 
 **내부 동작**
 
@@ -427,17 +464,23 @@ public void SetHorizontalAssist(Vector3 velocity); // 제트팩 공중 수평 �
 ```csharp
 public float FuelRatio { get; }      // 0~1
 public bool IsLocked { get; }
-public void SetThrustInput(bool held);
+
+/// <summary>추진 입력. worldDirection 은 PlayerMotor 와 같은 월드 XZ 단위 방향이다.</summary>
+public void SetThrustInput(bool held, Vector3 worldDirection);
 public void Lock(float seconds);
 ```
 
+`SetThrustInput` 이 방향을 함께 받는 이유: 규칙 2의 수평 보조 이동에 이동 입력이 필요한데,
+`JetpackController` 는 입력 시스템을 직접 알지 않기 때문이다. 둘 다 가진 `PlayerInputRelay`
+(Step 14)가 한 번에 넘긴다.
+
 **규칙** (gdd 7장)
 
-1. `SetThrustInput(true)` 이고 `IsLocked == false` 이고 연료 > 0 이고 `PlayerMotor.IsGrounded == false`
-   일 때만 추진한다.
+1. `SetThrustInput(true, ...)` 이고 `IsLocked == false` 이고 연료 > 0 이고
+   `PlayerMotor.IsGrounded == false` 일 때만 추진한다.
 2. 추진 중: 연료를 `ConsumePerSecond * Time.deltaTime` 만큼 줄이고,
    `PlayerMotor.SetVerticalVelocity(AscendSpeed)` 와
-   `PlayerMotor.SetHorizontalAssist(수평 입력 * HorizontalSpeed)` 를 호출한다.
+   `PlayerMotor.SetHorizontalAssist(worldDirection * HorizontalSpeed)` 를 호출한다.
 3. 회복: 접지 후 `RefillDelay` 초가 지나면 `RefillPerSecond` 속도로 회복한다.
    공중에서는 회복하지 않는다.
 4. `Lock(seconds)` 는 남은 잠금 시간과 비교해 **더 긴 쪽**으로 갱신한다.
@@ -464,8 +507,19 @@ public void KillByRingOut(GameObject credit);
 - 최대 HP는 상수 100f 를 `HealthComponent` 에 `[SerializeField] private float _maxHealth = 100f;`
   로 둔다. HP는 gdd 5.1의 공통 스펙이며 `MovementConfig` 소관이 아니다.
 - 사망 시 `Died` 를 한 번만 발생시키고, 오브젝트를 파괴하지 않는다.
-  **M1에서는 사망 처리 = 위치를 초기 스폰 지점으로 되돌리고 HP를 최대로 복구한다.**
+  **M1에서는 사망 처리 = 초기 스폰 지점으로 되돌리고 HP를 최대로 복구한다.**
   (리스폰 규칙은 M2 소관이지만, 검증 중 더미가 사라지면 반복 실험이 불가능하다)
+- 스폰 지점은 `Awake` 에서 `transform.position` 을 `_spawnPoint` 에 저장해 쓴다.
+- **되돌릴 때 주의 두 가지:**
+  1. `CharacterController` 가 붙어 있으면 `transform.position` 대입이 무시될 수 있다.
+     반드시 아래 순서로 한다.
+     ```csharp
+     _controller.enabled = false;
+     transform.position = _spawnPoint;
+     _controller.enabled = true;
+     ```
+  2. `PlayerMotor` 의 누적 속도를 함께 초기화한다. 하지 않으면 밀려나던 속도가 남아
+     리스폰 직후 그대로 다시 날아간다. `PlayerMotor.ResetVelocity()` 를 호출한다.
 - `GameLog.Combat($"{name} 사망 ({cause})")` 를 남긴다.
 
 ```csharp
@@ -493,9 +547,15 @@ public void Launch(Vector3 origin, Vector3 direction, GameObject owner, CombatCo
    로 포물선을 만들고 위치를 갱신한다.
 3. 충돌 검사는 이전 위치 → 새 위치 구간의 `Physics.Linecast` 로 한다.
    매 프레임 위치만 갱신하면 28 m/s 에서 얇은 벽을 통과한다.
+   충돌 마스크는 `Player | Platform` 이며, **클래스에 `static readonly` 로 한 번만 캐싱한다.**
+   `LayerMask.GetMask("Player", "Platform")` 을 매 프레임 호출하지 않는다 (문자열 조회 비용).
 4. 충돌 시 `ExplosionResolver.Resolve(...)` 를 호출하고 자신을 `Destroy` 한다.
-   충돌한 콜라이더가 `Player` 레이어면 그 `GameObject` 를 `directHitTarget` 으로 넘긴다.
+   충돌한 콜라이더가 `Player` 레이어면 그 `GameObject` 를 `directHitTarget` 으로 넘기고,
+   아니면 `null` 을 넘긴다.
 5. 발사 후 5초가 지나면 폭발 없이 `Destroy` 한다 (무한 비행 방지).
+6. **자기 자신과 발사자를 무시한다.** 로켓은 발사자 몸 안에서 출발하므로, `Linecast` 결과가
+   `owner` 이면 충돌로 치지 않고 통과시킨다. 그렇지 않으면 발사 즉시 자폭한다.
+   (로켓 점프는 지면에 맞고 터진 폭발의 스플래시로 발생하는 것이지 자폭이 아니다)
 
 **`RpgLauncher`**
 
@@ -509,6 +569,8 @@ public void RequestReload();
 1. 장탄 1발. 발사하면 즉시 빈 상태가 되고 `ReloadSeconds`(2.2초) 후 자동 장전된다.
 2. `IsReloading` 중 `TryFire` 는 무시한다 (로그 없이 조용히 반환).
 3. 로켓 프리팹은 `[SerializeField] private GameObject _rocketPrefab;` 로 주입받는다.
+   **프리팹 자체와 주입은 Step 15의 에디터 메뉴가 만든다.** 여기서는 필드만 선언한다.
+   `CombatConfig` 도 같은 방식으로 `[SerializeField]` 주입이다.
 4. **오브젝트 풀을 쓰지 않는다.** `Instantiate`/`Destroy` 로 충분하다 (7장 범위 밖 참조).
 
 - 완료 기준: 마우스 좌클릭으로 로켓이 발사되어 포물선을 그리며 날아가고, 지형에 맞으면 사라진다.
@@ -523,15 +585,23 @@ public void RequestReload();
 public static class ExplosionResolver
 {
     public static void Resolve(Vector3 center, GameObject owner, GameObject directHitTarget,
-                               CombatConfig config, LayerMask targetMask);
+                               CombatConfig config);
 }
+```
+
+레이어 마스크는 매개변수로 받지 않는다. Step 2에서 레이어 이름이 확정되었으므로 클래스 안에
+**`static readonly` 로 한 번만 캐싱한다.** 호출부가 마스크를 잘못 넘길 여지를 없애기 위해서다.
+
+```csharp
+private static readonly int TargetMask = LayerMask.GetMask("Player");
+private static readonly int BlockMask  = LayerMask.GetMask("Platform");
 ```
 
 **처리 순서**
 
-1. `Physics.OverlapSphere(center, config.ExplosionRadius, targetMask)` 로 대상을 모은다.
-2. 각 대상에 대해 `Physics.Linecast(center, 대상 중심, 차폐 마스크)` 로 벽 관통을 차단한다.
-   차폐 마스크는 `Platform` 레이어다. 막혀 있으면 그 대상은 건너뛴다.
+1. `Physics.OverlapSphere(center, config.ExplosionRadius, TargetMask)` 로 대상을 모은다.
+2. 각 대상에 대해 `Physics.Linecast(center, 대상 중심, BlockMask)` 로 벽 관통을 차단한다.
+   막혀 있으면 그 대상은 건너뛴다.
 3. **직격 판정**: 대상이 `directHitTarget` 과 같으면 `DirectHitDamage`(35)와
    `DirectHitKnockback`(14 m/s)를 쓴다. 아니면 `KnockbackCalculator.TryGetSplash` 로 밴드를 찾는다.
    밴드에 속하지 않으면 건너뛴다.
@@ -555,20 +625,46 @@ public static class ExplosionResolver
 
 **`ThirdPersonCamera`** — Cinemachine을 쓰지 않는다 (M2에 도입).
 
+```csharp
+public void AddLookInput(Vector2 delta);   // 마우스 델타 누적
+```
+
 1. `[SerializeField] private Transform _target;` 를 기준으로 구면 좌표 추적.
 2. 기본 거리 5 m, 높이 오프셋 1.6 m, 마우스 감도는 `[SerializeField]` 로 노출.
 3. 상하 회전 각도는 -40° ~ 70° 로 제한한다.
 4. `LateUpdate` 에서 위치를 갱신한다. **충돌 회피(벽 뚫림 방지)는 구현하지 않는다** — M1 범위 밖.
 
-**`PlayerInputRelay`** — Input System 이벤트를 각 컴포넌트에 전달만 한다. 규칙을 갖지 않는다.
+**`PlayerInputRelay`** — 입력을 읽어 각 컴포넌트에 전달만 한다. 게임 규칙을 갖지 않는다.
 
-| 액션 | 전달 대상 |
+주입받는 참조 (전부 `[SerializeField] private`):
+
+| 필드 | 타입 |
 |---|---|
-| `Move` | `PlayerMotor.SetMoveInput` (카메라 yaw 기준으로 변환) |
-| `Look` | `ThirdPersonCamera` 회전 입력 |
-| `Jump` | 눌림 → `PlayerMotor.RequestJump()`, 홀드 → `JetpackController.SetThrustInput(true)` |
-| `Fire` | `RpgLauncher.TryFire(카메라 위치, 카메라 forward)` |
-| `Reload` | `RpgLauncher.RequestReload()` |
+| `_actions` | `UnityEngine.InputSystem.InputActionAsset` |
+| `_camera` | `ThirdPersonCamera` |
+| `_motor` · `_jetpack` · `_launcher` | 같은 오브젝트의 컴포넌트 (`Awake` 에서 `GetComponent` 로 캐싱해도 된다) |
+
+`_actions` 에는 Step 8에서 정리한 `InputSystem_Actions.inputactions` 를 넣는다 (Step 15에서 주입).
+`Awake` 에서 `_actions.FindActionMap("Player", true)` 로 맵을 얻고 각 액션을 필드에 캐싱한다.
+`OnEnable` 에서 맵을 `Enable()`, `OnDisable` 에서 `Disable()` 한다.
+
+**액션은 콜백 등록이 아니라 `Update` 에서 폴링한다.** 실행 순서가 명확하고 그레이박스에 충분하다.
+
+| 액션 | 읽는 방법 | 전달 |
+|---|---|---|
+| `Move` | `ReadValue<Vector2>()` | 카메라 yaw 로 월드 방향 변환 후 `PlayerMotor.SetMoveInput(worldDir)` |
+| `Look` | `ReadValue<Vector2>()` | `ThirdPersonCamera.AddLookInput(delta)` |
+| `Jump` | `WasPressedThisFrame()` / `IsPressed()` | 눌린 프레임 → `PlayerMotor.RequestJump()`, 홀드 → `JetpackController.SetThrustInput(IsPressed(), worldDir)` |
+| `Attack` | `WasPressedThisFrame()` | `RpgLauncher.TryFire(카메라 위치, 카메라 forward)` |
+| `Reload` | `WasPressedThisFrame()` | `RpgLauncher.RequestReload()` |
+
+카메라 기준 월드 방향 변환:
+
+```csharp
+Vector3 f = _camera.transform.forward; f.y = 0f; f.Normalize();
+Vector3 r = _camera.transform.right;   r.y = 0f; r.Normalize();
+Vector3 worldDir = (f * move.y + r * move.x).normalized;
+```
 
 - 완료 기준: 마우스로 시점이 돌고, 이동 방향이 카메라 기준으로 맞고, 좌클릭으로 조준 방향에 로켓이 나간다.
 
@@ -579,19 +675,38 @@ public static class ExplosionResolver
 - **씬과 에셋을 손으로 조립하는 대신 코드로 생성한다.** 재현 가능하고 검토할 수 있다.
 
 ```csharp
-[MenuItem("BoomPG/Setup/1. 기본 설정 에셋 생성")]
-private static void CreateConfigAssets();
+[MenuItem("BoomPG/Setup/1. 기본 에셋 생성")]
+private static void CreateBaseAssets();
 
 [MenuItem("BoomPG/Setup/2. M1 그레이박스 씬 생성")]
 private static void CreateGreyboxScene();
 ```
 
-**`CreateConfigAssets`** — `Assets/_Project/Data/` 에 아래 3개를 만든다. 이미 있으면 덮어쓰지 않고
-`GameLog.Warn` 을 남기고 건너뛴다.
+**`CreateBaseAssets`** — 설정 에셋 3종과 **로켓 프리팹**을 만든다.
+이미 있으면 덮어쓰지 않고 `GameLog.Warn` 을 남기고 건너뛴다.
+
+`Assets/_Project/Data/` 에:
 
 - `SO_MovementConfig.asset`
 - `SO_CombatConfig.asset`
 - `SO_JetpackConfig.asset`
+
+`Assets/_Project/Prefabs/` 에:
+
+- `P_Rocket.prefab` — 구성은 아래와 같다.
+
+| 항목 | 값 |
+|---|---|
+| 루트 | `GameObject.CreatePrimitive(PrimitiveType.Sphere)` |
+| 이름 | `P_Rocket` |
+| 스케일 | (0.3, 0.3, 0.3) |
+| 레이어 | `Rocket` |
+| `SphereCollider` | **제거한다** (`Object.DestroyImmediate`) — 충돌 판정은 Step 12의 `Linecast` 가 하므로 콜라이더는 불필요하고, 남겨두면 `CharacterController` 와 간섭한다 |
+| `MeshRenderer` | 유지 (그레이박스에서 로켓이 보여야 한다) |
+| 컴포넌트 | `RocketProjectile` 추가 |
+
+`PrefabUtility.SaveAsPrefabAsset` 으로 저장한 뒤 임시로 만든 씬 오브젝트는 `DestroyImmediate` 한다.
+`RocketProjectile` 은 `CombatConfig` 를 `Launch()` 인자로 받으므로 프리팹에 설정 에셋을 주입하지 않는다.
 
 **`CreateGreyboxScene`** — `Assets/_Project/Scenes/M1_Greybox.unity` 를 새로 만들고 아래를 배치한다.
 
@@ -606,11 +721,35 @@ private static void CreateGreyboxScene();
 | 카메라 | Main Camera + `ThirdPersonCamera`(target = 플레이어) |
 | 조명 | Directional Light |
 
-- 설정 에셋 참조는 `AssetDatabase.LoadAssetAtPath` 로 찾아 각 컴포넌트에 주입한다.
-  에셋이 없으면 `GameLog.Error` 를 남기고 씬 생성을 중단한다.
+**주입 목록** — 에셋은 `AssetDatabase.LoadAssetAtPath` 로 찾는다.
+하나라도 못 찾으면 `GameLog.Error` 를 남기고 **씬 생성을 중단한다** (반쯤 만들어진 씬을 남기지 않는다).
+
+| 대상 | 필드 | 넣을 값 |
+|---|---|---|
+| `PlayerMotor` (플레이어 + 더미 4개 **전부**) | `_movementConfig` | `SO_MovementConfig.asset` |
+| `PlayerMotor` (전부) | `_combatConfig` | `SO_CombatConfig.asset` |
+| `JetpackController` | `_jetpackConfig` | `SO_JetpackConfig.asset` |
+| `RpgLauncher` | `_combatConfig` | `SO_CombatConfig.asset` |
+| `RpgLauncher` | `_rocketPrefab` | `P_Rocket.prefab` |
+| `PlayerInputRelay` | `_actions` | `Assets/_Project/Settings/InputSystem_Actions.inputactions` |
+| `PlayerInputRelay` | `_camera` | Main Camera 의 `ThirdPersonCamera` |
+| `ThirdPersonCamera` | `_target` | 플레이어 `Transform` |
+
+주입 대상이 전부 `private` 필드이므로 **`SerializedObject` 로 써야 한다.**
+
+```csharp
+var so = new SerializedObject(component);
+so.FindProperty("_rocketPrefab").objectReferenceValue = prefab;
+so.ApplyModifiedProperties();
+```
+
+필드 이름이 바뀌면 여기도 같이 바꿔야 한다. 문자열이라 컴파일러가 잡아주지 않으므로,
+주입 후 `FindProperty` 결과가 `null` 인지 확인하고 `null` 이면 `GameLog.Error` 를 남긴다.
+
 - 생성 후 `EditorSceneManager.SaveScene` 으로 저장한다.
-- 완료 기준: 메뉴 두 개를 순서대로 실행하면 에셋 3개와 씬 1개가 만들어지고,
-  씬을 열어 Play 하면 조작이 가능하다.
+- 완료 기준: 메뉴 두 개를 순서대로 실행하면 **에셋 3개 + 프리팹 1개 + 씬 1개**가 만들어지고,
+  씬을 열어 Play 하면 조작이 가능하며, 좌클릭 시 로켓이 발사된다
+  (`_rocketPrefab` 이 비어 있으면 발사가 안 되므로 이것이 주입 성공의 확인이 된다).
 
 ## 5. 인수 조건 (Acceptance Criteria)
 
@@ -623,6 +762,9 @@ private static void CreateGreyboxScene();
 - [ ] asmdef 6개가 존재하고 참조 목록이 3장 표와 일치한다
 - [ ] `BoomPG.Gameplay.asmdef` 의 참조에 `BoomPG.Network` 가 **없다**
 - [ ] `TagManager.asset` 8~13번에 `Player`, `Platform`, `Rocket`, `Pickup`, `KillZone`, `Grapple` 이 등록돼 있다
+- [ ] 메뉴 1 실행 후 `Assets/_Project/Data/` 에 SO 3개, `Assets/_Project/Prefabs/P_Rocket.prefab` 이 생성된다
+- [ ] `P_Rocket.prefab` 에 `RocketProjectile` 이 붙어 있고 `SphereCollider` 가 없다
+- [ ] 메뉴 2 실행 후 씬의 `RpgLauncher._rocketPrefab` 이 비어 있지 않다
 
 **코드 규약**
 
@@ -680,6 +822,8 @@ private static void CreateGreyboxScene();
 - AI 봇 — 더미는 움직이지 않는 캡슐이다
 - **Mobile URP 에셋 삭제와 모바일 품질 레벨 정리** — `QualitySettings.asset` 의 참조 때문에
   단독으로 지울 수 없다. 3장 인용 블록 참조. 별도 작업으로 분리한다
+- **입력 액션 정리** — 안 쓰는 액션(`Interact`·`Crouch`·`Sprint` 등)과 Touch·Gamepad·XR
+  컨트롤 스킴 삭제. PC에서 해가 없고 JSON 을 손대는 위험만 크다. 별도 작업으로 분리한다
 
 **건드리면 안 되는 것**
 
