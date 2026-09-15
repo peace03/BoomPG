@@ -1,0 +1,152 @@
+# BoomPG 문서 인덱스
+
+> 이 프로젝트의 진실 공급원은 대화가 아니라 이 폴더입니다.
+> 새 문서를 만들면 여기에 등록합니다. 등록되지 않은 문서는 없는 문서로 취급합니다.
+> 규칙 전문: [rules/documentation.md](rules/documentation.md)
+
+## 목차
+
+### 규칙 — 지켜야 할 것
+
+| 문서 | 내용 |
+|---|---|
+| [rules/documentation.md](rules/documentation.md) | **문서 규칙.** 무엇을 어디에 적는가, 언제 갱신하는가, 애매하면 어떻게 하는가 |
+| [rules/workflow.md](rules/workflow.md) | Claude(기획) · Codex(구현) · 사람(결정·커밋)의 역할과 한 사이클 |
+| [rules/code-style.md](rules/code-style.md) | C# · Unity 네이밍, 폴더 구조, 성능·에러 처리·주석 규칙 |
+
+### 설계 — 게임이 무엇인가
+
+| 문서 | 내용 | 상태 |
+|---|---|---|
+| [design/gdd.md](design/gdd.md) | **게임 디자인 문서 — 게임 내용의 정본.** 수치·모드·맵·마일스톤 전부 | **v0.4** |
+| [design/glossary.md](design/glossary.md) | 용어 사전 (한국어 ↔ 코드 식별자) | 갱신됨 |
+
+> gdd 개정본이 나오면 `docs/design/gdd.md`에 **덮어쓰십시오.** 버전별 파일을 만들지 않습니다.
+> gdd 23장은 아키텍트가 덧붙인 정합성 검토입니다 (기획자 작성분이 아님).
+
+### 기술 — 어떻게 만드는가
+
+| 문서 | 내용 | 상태 |
+|---|---|---|
+| [tech/architecture.md](tech/architecture.md) | 기술 스택, 레이어 원칙, 현재 에셋 현황, MVP 구현 순서 | 확정분 반영 |
+| [tech/networking.md](tech/networking.md) | 호스트 권위 경계, 넉백 처리 규약 | 확정분 반영 |
+| [pipeline/asset-pipeline.md](pipeline/asset-pipeline.md) | 3D 모델 · 오디오 · VFX 반입 절차 | 뼈대 |
+
+### 결정 기록 (ADR) — 왜 그렇게 정했는가
+
+| 번호 | 결정 | 상태 |
+|---|---|---|
+| [ADR-0001](decisions/ADR-0001-온라인-멀티-pvp.md) | 플레이 형태를 온라인 멀티 PvP로 한다 | 채택 |
+| [ADR-0002](decisions/ADR-0002-pc-단독-플랫폼.md) | 목표 플랫폼을 PC (Windows) 단독으로 한다 | 채택 |
+| [ADR-0003](decisions/ADR-0003-낙사형-배틀로얄-승리조건.md) | 승리 조건을 낙사형 배틀로얄로 한다 | 채택 |
+| [ADR-0004](decisions/ADR-0004-photon-fusion-2.md) | 네트워크를 Photon Fusion 2 (Host Mode)로 한다 | 채택 |
+| [ADR-0005](decisions/ADR-0005-프로젝트-코드-구조.md) | 프로젝트 코드 구조 (폴더 · 어셈블리 · 로깅 · 테스트 · 데이터) | 채택 |
+| [ADR-template](decisions/ADR-template.md) | 새 ADR을 쓸 때 복사하는 양식 | — |
+
+### 문서 밖 (참고)
+
+| 경로 | 내용 |
+|---|---|
+| [CLAUDE.md](../CLAUDE.md) | Claude(아키텍트) 지시서 |
+| [AGENTS.md](../AGENTS.md) | Codex(구현자) 지시서 |
+| `TaskPlan/TASK_PLAN.md` | 현재 진행 중인 작업 지시서 |
+| `scripts/` | 가드 훅 · 핸드오프 스크립트 |
+
+---
+
+## 확정 요약
+
+| 항목 | 결정 |
+|---|---|
+| 장르 · 시점 | 3인칭 로켓 아레나 액션 (넉백 파이터) |
+| 플레이 형태 | 온라인 멀티 PvP · Photon Fusion 2 Host Mode |
+| 플랫폼 | PC (Windows) 단독 · 키보드+마우스 |
+| 기본 모드 | 배틀로얄 솔로 8인 · 목숨 1개 · 최후 1인 생존 |
+| 승리 수단 | **낙사 주력** (목표 비율 60~70%) + HP 100 · 직격 3방 보조 |
+| 매치 길이 | 5분 15초 (축소 6페이즈) |
+| 맵 | 공중 정거장 스카이야드 1종 (160 × 160 m) |
+| MVP 범위 | gdd 20장 그대로. **클래스 3종은 후순위** |
+| 코드 구조 | `Assets/_Project/` · 도메인별 asmdef · `GameLog` 래퍼 · EditMode 테스트 · ScriptableObject |
+
+---
+
+## 결정 대기 목록
+
+정해지지 않은 것은 **추측으로 메우지 않고 사용자에게 묻습니다.**
+결정되면 해당 문서 본문을 고치고 이 목록에서 지웁니다.
+
+> **첫 구현 계획서를 막는 결정은 모두 해소되었습니다.** M1 그레이박스 계획서를 쓸 수 있습니다.
+
+### ① M1 그레이박스에서 검증·결정
+
+| ID | 내용 | 문서 |
+|---|---|---|
+| **D-022** | 넉백 합성 규칙 — **부분 확정**(세 모드 구현, 기본값 `Additive` + 상한 25 m/s). **최종 모드 선택은 M1 플레이테스트 후** | [gdd 23.2](design/gdd.md) · [networking](tech/networking.md) |
+| D-024 | 로켓 점프 최대 높이 6.5 m와 자가 넉백 18 m/s의 수치 불일치 | [gdd 23.2](design/gdd.md) |
+| D-025 | 제트팩 복귀 성능 — 수평 16 m vs 플랫폼 간격 15 m, 복귀 가능 낙하 깊이 미정 | [gdd 23.2](design/gdd.md) |
+| D-013 | 직격 데미지 35 vs 40 | [gdd 22](design/gdd.md) |
+| D-023 | MVP "축소 3페이즈"에 대응하는 스케줄 재산정 | [gdd 23.2](design/gdd.md) |
+| D-020 | 관제탑(+18 m)이 실제로 하이리스크로 느껴지는지 | [gdd 22](design/gdd.md) |
+
+### ② M2 전 · M2 중
+
+| ID | 내용 | 문서 |
+|---|---|---|
+| **D-021** | **Fusion 2 라이선스 비용 · 무료 티어 CCU 한도.** 비용 확인 전에는 M2를 시작하지 않는다 | [networking](tech/networking.md) |
+| D-014 | 모드 B 인원 상한선 (Host Mode 실측) | [networking](tech/networking.md) |
+
+### ③ M3 이후
+
+| ID | 내용 | 문서 |
+|---|---|---|
+| D-012 | BARCO AI 산출물 반입 규격 (포맷 · 폴리곤 예산 · 스케일 · 리깅) | [pipeline](pipeline/asset-pipeline.md) |
+| D-015 | 모드 B 인원수별 초기 반경 스케일링 공식 | [networking](tech/networking.md) |
+| D-016 | 클래스별 캐릭터 종수 | [gdd 22](design/gdd.md) |
+| D-017 | 갈고리 조준 시 적/아군/다운 우선순위 규칙 | [gdd 22](design/gdd.md) |
+| D-018 | 모드 C 관제탑 점령 점수 배분 및 목표 점수 | [gdd 22](design/gdd.md) |
+| D-019 | 강화 칩 리스폰 주기 60초 적절성 | [gdd 22](design/gdd.md) |
+
+### 해소됨
+
+| ID | 결정 | 근거 |
+|---|---|---|
+| D-004 | 네트워크 솔루션 — Photon Fusion 2 | ADR-0004 |
+| D-005 | 서버 형태 — Host Mode (호스트 권위) | ADR-0004 |
+| D-006 | 매치 인원 — 모드 A 8인 | ADR-0003 |
+| D-009 | 승리 조건 — 낙사형 배틀로얄 | ADR-0003 |
+| D-010 | 다양성 범위 — RPG 1종 + 클래스 3종(스킬만 차이, MVP 후순위) | ADR-0003 |
+| D-011 | 매치 길이 — 5분 15초 | ADR-0003 |
+| D-001 | 폴더 구조 — `Assets/_Project/` 신설, 템플릿 폴더 이동·삭제 | ADR-0005 |
+| D-002 | 어셈블리 — 도메인별 asmdef 분리 (참조 방향 강제) | ADR-0005 |
+| D-003 | 로깅 — `GameLog` 래퍼 도입, `Debug.Log` 직접 호출 금지 | ADR-0005 |
+| D-007 | 테스트 — EditMode만 도입, PlayMode 없음 | ADR-0005 |
+| D-008 | 데이터 — ScriptableObject (`Assets/_Project/Data/`) | ADR-0005 |
+
+---
+
+## 확인이 필요한 외부 사실
+
+| 내용 | 상태 |
+|---|---|
+| **Rocket Arena (EA, 2020)** 선례 — gdd 1장이 유사 선례로 언급하면서 "검색 없이 작성했으므로 직접 확인하라"고 명시. 차별점 정리와 포트폴리오 발표 대비에 필요 | 미확인 |
+| gdd 17.1의 "Unity 6 LTS" 표기 vs 실제 프로젝트 버전 `6000.6.0f1` | 미확인 |
+
+---
+
+## 계획서 이력
+
+완료된 계획서는 `TaskPlan/`에 날짜를 붙여 보관합니다.
+
+| 날짜 | 작업 | 파일 | 상태 |
+|---|---|---|---|
+| 2026-09-14 | 가드 훅 스크립트 보정 (인코딩 · 오탐 · 자기유지) | `TaskPlan/2026-09-14-가드-훅-보정.md` | 완료 |
+| 2026-09-15 | M1 그레이박스 프로토타입 (넉백 코어 검증) | `TaskPlan/TASK_PLAN.md` | **진행 중** |
+
+## 변경 이력
+
+| 날짜 | 내용 |
+|---|---|
+| 2026-09-14 | 최초 작성. 문서 체계 수립, ADR-0001 · ADR-0002 등록, 미결정 D-001 ~ D-012 등록 |
+| 2026-09-14 | gdd v0.4 반입. ADR-0003 · ADR-0004 등록, D-004~D-006 · D-009~D-011 해소, D-013 ~ D-025 신규 등록 |
+| 2026-09-14 | ADR-0005 등록. D-001 · D-002 · D-003 · D-007 · D-008 해소 — 첫 구현 계획서 착수 가능 |
+| 2026-09-15 | D-022 부분 확정. M1 그레이박스 계획서 작성, 가드 훅 계획서 보관 처리 |
