@@ -9,8 +9,27 @@
 2. `docs/design/glossary.md` — 한국어 용어 ↔ 코드 식별자 대응
 3. `docs/design/gdd.md` 5~7장(수치), 17장(구현 설계), 23장(아키텍트 검토)
 
-**Unity Editor를 닫은 상태에서 Step 1을 시작하십시오.** 에디터가 켜진 채로 파일시스템에서
+**Unity Editor를 닫은 상태에서 작업하십시오.** 에디터가 켜진 채로 파일시스템에서
 에셋을 옮기면 Unity가 삭제+신규 생성으로 인식해 GUID 참조가 끊어집니다.
+
+## 0.1 진행 상황 — **Step 2부터 시작하십시오** (2026-09-15 갱신)
+
+**Step 1(폴더 이동)은 이미 완료되었습니다. 다시 실행하지 마십시오.**
+
+아키텍트가 결과를 검증한 내용:
+
+- `Assets/_Project/` 이하 폴더 구조 생성 완료
+- `Scenes/`, `Settings/`, `InputSystem_Actions.inputactions` 이동 완료
+- **모든 파일의 `.meta` 짝이 맞고 고아 `.meta` 가 없음을 확인함** (GUID 참조 무사)
+- `Mobile_*` URP 에셋 보존 확인, `ProjectSettings/QualitySettings.asset` 무변경 확인
+
+`Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제는 **샌드박스 정책상 거부되므로 시도하지
+마십시오.** 사람이 Unity 에디터에서 처리합니다 (7장 범위 밖으로 옮겼습니다).
+이 둘이 남아 있어도 이후 스텝에 영향이 없습니다 — `ReadmeEditor.cs` 는 `Editor` 폴더 안에 있어
+에디터 어셈블리로만 컴파일되고 게임 코드와 충돌하지 않습니다.
+
+`Assets/_Project/` 와 그 하위 폴더에는 아직 `.meta` 가 없습니다. Unity 를 처음 열 때
+자동 생성되므로 **직접 만들지 마십시오.**
 
 ## 1. 목표 (Goal)
 
@@ -131,7 +150,7 @@ Editor / Tests
 
 ## 4. 구현 스텝 (Step-by-Step)
 
-### Step 1 — 폴더 구조 정리
+### Step 1 — 폴더 구조 정리 — **완료됨. 건너뛰십시오** (0.1 참조)
 
 - 대상: `Assets/` 전체
 - 변경:
@@ -140,10 +159,10 @@ Editor / Tests
   2. `Assets/Scenes/` 를 `Assets/_Project/Scenes/` 로 옮긴다. **`Assets/Scenes.meta` 도 함께 옮긴다.**
   3. `Assets/Settings/` 를 `Assets/_Project/Settings/` 로 옮긴다. **`Assets/Settings.meta` 도 함께.**
   4. `Assets/InputSystem_Actions.inputactions` 와 그 `.meta` 를 `Assets/_Project/Settings/` 로 옮긴다.
-  5. `Assets/TutorialInfo/`, `Assets/TutorialInfo.meta`, `Assets/Readme.asset`,
-     `Assets/Readme.asset.meta` 를 삭제한다.
-     (`Readme.asset` 의 GUID `8105016687592461f977c054a80ce2f2` 를 참조하는 곳이 없음을 확인했다.
-     `ReadmeEditor.cs` 는 `TutorialInfo/Editor/` 안에 있어 함께 삭제된다)
+  5. ~~`Assets/TutorialInfo/`, `Assets/Readme.asset` 삭제~~ — **범위 밖으로 옮겼다.**
+     샌드박스 정책이 삭제를 거부한다. 사람이 Unity 에디터에서 처리한다.
+     (`Readme.asset` 의 GUID `8105016687592461f977c054a80ce2f2` 를 참조하는 곳이 없음을 확인했으므로
+     삭제 자체는 안전하다)
   6. **`Mobile_RPAsset.asset` 과 `Mobile_Renderer.asset` 은 삭제하지 않는다.**
      `Settings/` 이동에 딸려 `Assets/_Project/Settings/` 로 옮겨지기만 하면 된다.
      이유는 3장의 인용 블록을 참조하라.
@@ -755,10 +774,10 @@ so.ApplyModifiedProperties();
 
 **구조**
 
-- [ ] `Assets/` 바로 아래에 `_Project` 폴더(와 `.meta`)만 있다
-- [ ] `Assets/TutorialInfo`, `Assets/Readme.asset` 이 없다
-- [ ] `Assets/_Project/Settings/` 에 `PC_*` 와 `Mobile_*` URP 에셋이 모두 남아 있다
-- [ ] `ProjectSettings/QualitySettings.asset` 이 변경되지 않았다
+- [x] `Assets/_Project/` 로 이동 완료, `.meta` 짝 일치 (Step 1 — 검증 완료)
+- [x] `Assets/_Project/Settings/` 에 `PC_*` 와 `Mobile_*` URP 에셋이 모두 남아 있다
+- [x] `ProjectSettings/QualitySettings.asset` 이 변경되지 않았다
+- [ ] ~~`Assets/TutorialInfo`, `Assets/Readme.asset` 삭제~~ — 범위 밖 (사람이 Unity에서 처리)
 - [ ] asmdef 6개가 존재하고 참조 목록이 3장 표와 일치한다
 - [ ] `BoomPG.Gameplay.asmdef` 의 참조에 `BoomPG.Network` 가 **없다**
 - [ ] `TagManager.asset` 8~13번에 `Player`, `Platform`, `Rocket`, `Pickup`, `KillZone`, `Grapple` 이 등록돼 있다
@@ -824,6 +843,9 @@ so.ApplyModifiedProperties();
   단독으로 지울 수 없다. 3장 인용 블록 참조. 별도 작업으로 분리한다
 - **입력 액션 정리** — 안 쓰는 액션(`Interact`·`Crouch`·`Sprint` 등)과 Touch·Gamepad·XR
   컨트롤 스킴 삭제. PC에서 해가 없고 JSON 을 손대는 위험만 크다. 별도 작업으로 분리한다
+- **`Assets/TutorialInfo/` 와 `Assets/Readme.asset` 삭제** — 샌드박스 정책이 파일 삭제를
+  거부한다. 사람이 Unity 에디터의 Project 창에서 지운다 (에디터가 `.meta` 까지 함께 정리한다).
+  **삭제를 다시 시도하지 마십시오.** 남아 있어도 이후 스텝에 영향이 없다
 
 **건드리면 안 되는 것**
 
