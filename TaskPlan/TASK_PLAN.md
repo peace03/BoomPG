@@ -57,8 +57,17 @@ EditMode 테스트)을 이번에 함께 세워 이후 모든 작업이 같은 �
 | `Assets/InputSystem_Actions.inputactions` → `Assets/_Project/Settings/` | 이동 (`.meta` 동반) |
 | `Assets/TutorialInfo/` | 삭제 (`.meta` 포함) |
 | `Assets/Readme.asset` | 삭제 (`.meta` 포함) |
-| `Assets/_Project/Settings/Mobile_RPAsset.asset` | 이동 후 삭제 |
-| `Assets/_Project/Settings/Mobile_Renderer.asset` | 이동 후 삭제 |
+| `Mobile_RPAsset.asset` · `Mobile_Renderer.asset` | **이동만 한다. 삭제하지 않는다** (아래 참조) |
+
+> **Mobile URP 에셋을 삭제하지 않는 이유**
+> `ProjectSettings/QualitySettings.asset` 의 `Mobile` 품질 레벨(배열 인덱스 0)이
+> `Mobile_RPAsset.asset` 을 GUID `5e6cbd92db86f4b18aec3ed561671858` 로 참조하고 있다.
+> 삭제하면 끊어진 참조가 남는데, 그것을 고치려면 품질 레벨 배열에서 항목을 빼야 하고
+> 그러면 `m_PerPlatformDefaultQuality` 의 인덱스 매핑까지 전부 다시 맞춰야 한다.
+> M1 의 목적(넉백 검증)과 무관한 위험이므로 이번 범위에서 제외한다.
+> **이동은 안전하다** — Unity 는 경로가 아니라 GUID 로 추적하므로 `.meta` 를 동반해 옮기면
+> 참조가 유지된다. 현재 활성 품질은 `m_CurrentQuality: 1` (PC) 이라 모바일 레벨이 남아 있어도
+> PC 빌드에 영향이 없다.
 
 ### 신규 — 어셈블리 정의
 
@@ -123,12 +132,17 @@ Editor / Tests
   4. `Assets/InputSystem_Actions.inputactions` 와 그 `.meta` 를 `Assets/_Project/Settings/` 로 옮긴다.
   5. `Assets/TutorialInfo/`, `Assets/TutorialInfo.meta`, `Assets/Readme.asset`,
      `Assets/Readme.asset.meta` 를 삭제한다.
-  6. `Assets/_Project/Settings/Mobile_RPAsset.asset`, `Mobile_Renderer.asset` 과 각 `.meta` 를 삭제한다.
+     (`Readme.asset` 의 GUID `8105016687592461f977c054a80ce2f2` 를 참조하는 곳이 없음을 확인했다.
+     `ReadmeEditor.cs` 는 `TutorialInfo/Editor/` 안에 있어 함께 삭제된다)
+  6. **`Mobile_RPAsset.asset` 과 `Mobile_Renderer.asset` 은 삭제하지 않는다.**
+     `Settings/` 이동에 딸려 `Assets/_Project/Settings/` 로 옮겨지기만 하면 된다.
+     이유는 3장의 인용 블록을 참조하라.
 - 주의: `.meta` 파일을 반드시 동반해 옮긴다. Unity는 경로가 아니라 `.meta` 안의 GUID로 참조를
   추적하므로, `.meta`가 따라가면 URP 에셋 참조와 빌드 씬 목록이 끊기지 않는다.
 - 완료 기준: `Assets/` 바로 아래에 `_Project` 폴더와 그 `.meta` 만 남는다.
-  `Assets/TutorialInfo`, `Assets/Readme.asset`, `Mobile_RPAsset.asset`, `Mobile_Renderer.asset`
-  이 존재하지 않는다.
+  `Assets/TutorialInfo`, `Assets/Readme.asset` 이 존재하지 않는다.
+  `Assets/_Project/Settings/` 안에 `PC_*` 와 `Mobile_*` 에셋이 **모두** 있다.
+  `ProjectSettings/QualitySettings.asset` 은 변경되지 않는다.
 
 ### Step 2 — 레이어 등록
 
@@ -603,7 +617,9 @@ private static void CreateGreyboxScene();
 **구조**
 
 - [ ] `Assets/` 바로 아래에 `_Project` 폴더(와 `.meta`)만 있다
-- [ ] `Assets/TutorialInfo`, `Assets/Readme.asset`, `Mobile_RPAsset.asset`, `Mobile_Renderer.asset` 이 없다
+- [ ] `Assets/TutorialInfo`, `Assets/Readme.asset` 이 없다
+- [ ] `Assets/_Project/Settings/` 에 `PC_*` 와 `Mobile_*` URP 에셋이 모두 남아 있다
+- [ ] `ProjectSettings/QualitySettings.asset` 이 변경되지 않았다
 - [ ] asmdef 6개가 존재하고 참조 목록이 3장 표와 일치한다
 - [ ] `BoomPG.Gameplay.asmdef` 의 참조에 `BoomPG.Network` 가 **없다**
 - [ ] `TagManager.asset` 8~13번에 `Player`, `Platform`, `Rocket`, `Pickup`, `KillZone`, `Grapple` 이 등록돼 있다
@@ -662,6 +678,8 @@ private static void CreateGreyboxScene();
 - 아트·사운드·VFX — 회색 기본 머티리얼로 충분하다
 - 카메라 벽 충돌 회피
 - AI 봇 — 더미는 움직이지 않는 캡슐이다
+- **Mobile URP 에셋 삭제와 모바일 품질 레벨 정리** — `QualitySettings.asset` 의 참조 때문에
+  단독으로 지울 수 없다. 3장 인용 블록 참조. 별도 작업으로 분리한다
 
 **건드리면 안 되는 것**
 

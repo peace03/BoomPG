@@ -22,11 +22,29 @@
 |---|---|---|
 | `Assets/Scenes/SampleScene.unity` | URP 템플릿 기본 씬 | 그레이박스 씬으로 대체 예정 |
 | `Assets/Settings/PC_*.asset` | PC용 URP 에셋 | 유지 |
-| `Assets/Settings/Mobile_*.asset` | 모바일용 URP 에셋 | **제거 대상** ([ADR-0002](../decisions/ADR-0002-pc-단독-플랫폼.md)) |
+| `Assets/Settings/Mobile_*.asset` | 모바일용 URP 에셋 | 제거 대상이나 **단독 삭제 불가** (아래) |
 | `Assets/TutorialInfo/` | URP 템플릿 샘플 | 제거 대상 |
 | `Assets/InputSystem_Actions.inputactions` | 기본 액션 맵 | gdd 4장 조작표로 재작성 |
 
 정리 작업은 별도 계획서로 진행합니다.
+
+### 2.1 Mobile URP 에셋이 단독으로 지워지지 않는 이유
+
+[ADR-0002](../decisions/ADR-0002-pc-단독-플랫폼.md)는 모바일 렌더 에셋을 정리 대상으로 정했지만,
+`ProjectSettings/QualitySettings.asset` 의 `Mobile` 품질 레벨(배열 인덱스 0)이
+`Mobile_RPAsset.asset` 을 GUID `5e6cbd92db86f4b18aec3ed561671858` 로 참조하고 있습니다.
+
+에셋만 지우면 끊어진 참조가 남고, 그것을 없애려면 품질 레벨 배열에서 항목을 빼야 하는데
+그러면 `m_PerPlatformDefaultQuality` 의 인덱스 매핑을 전부 다시 맞춰야 합니다.
+YAML 을 직접 손대면 위험하므로 **Unity 에디터의 Quality 설정 UI에서 처리하는 것이 안전합니다.**
+
+현재 활성 품질은 `m_CurrentQuality: 1` (PC) 이므로 모바일 레벨이 남아 있어도 PC 빌드에 영향은
+없습니다. 파일 이동은 GUID 기반이라 참조가 유지되므로 안전합니다.
+
+> 후속 작업으로 남깁니다. 처리 방식은 세 가지입니다 — (a) 품질 레벨 통째로 제거 + 인덱스 재매핑,
+> (b) Mobile 레벨의 `customRenderPipeline` 을 PC 에셋으로 교체한 뒤 모바일 에셋 삭제,
+> (c) 그대로 둔다. 빌드 설정을 손볼 시점에 정합니다.
+> `GraphicsSettings.asset` 에는 모바일 참조가 없음을 확인했습니다.
 
 ## 3. 레이어 원칙
 
@@ -121,3 +139,4 @@ M2 온라인      → Fusion 2 8인 · CollapseManager · KillCreditTracker · �
 | 2026-09-14 | gdd v0.4 반입. 기술 스택 확정, 레이어 원칙 근거 보강, 풀링·Layer 확정, MVP 구현 순서 추가 |
 | 2026-09-14 | ADR-0005 채택. D-007(EditMode 테스트) · D-008(ScriptableObject) 해소 |
 | 2026-09-15 | Cinemachine 도입 시점을 M2로 명시. M1은 자체 `ThirdPersonCamera` 로 진행 |
+| 2026-09-15 | 2.1 추가 — Mobile URP 에셋이 QualitySettings 참조 때문에 단독 삭제 불가함을 기록 |
