@@ -13,12 +13,12 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Player
+  - Platform
+  - Rocket
+  - Pickup
+  - KillZone
+  - Grapple
   - 
   - 
   - 
