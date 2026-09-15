@@ -137,6 +137,15 @@ Assets/_Project/
 - C# 파일: UTF-8 (BOM 없음), 들여쓰기 공백 4칸.
 - PowerShell 스크립트(`scripts/*.ps1`): UTF-8 **BOM 포함** + CRLF.
   BOM이 없으면 Windows PowerShell 5.1이 CP949로 읽어 한글 주석에서 파싱 에러가 납니다.
+- PowerShell에서 **네이티브 exe로 한글을 파이프**할 때는 `$OutputEncoding` 을 UTF-8로 올립니다.
+  5.1 기본값은 ASCII라서 파이프를 타는 한글이 전부 `?` 로 바뀝니다.
+  `[Console]::OutputEncoding` 은 화면 출력용이라 별개이며, 둘 다 설정해야 합니다.
+
+  ```powershell
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  $OutputEncoding = $utf8NoBom              # 파이프로 exe 에 넘길 때
+  [Console]::OutputEncoding = $utf8NoBom    # 콘솔 출력
+  ```
 - 마크다운: UTF-8 (BOM 없음), LF.
 - `.meta` 파일은 직접 만들지 않습니다. Unity가 생성합니다.
 
