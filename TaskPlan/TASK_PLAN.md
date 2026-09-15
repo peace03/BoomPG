@@ -14,10 +14,14 @@
 - 에디터를 닫아야 했던 이유는 **Step 1의 파일 이동** 때문이었고, 그 작업은 이미 끝났습니다.
 - **Step 2~15는 파일을 새로 만드는 작업이라 에디터 실행 여부와 무관합니다.**
   에디터가 켜져 있는지 확인하려 하지 말고, 사용자에게 묻지도 말고 바로 구현하십시오.
-- **6장의 배치 모드 테스트만** 에디터가 닫혀 있어야 합니다 (프로젝트 락 충돌).
-- 아키텍트가 확인한 현재 상태 (2026-09-15): `Temp/UnityLockfile` 이 없으므로 이 프로젝트는
-  **에디터에서 열려 있지 않습니다.** 실행 중인 `unity.exe mcp` 프로세스는 MCP 브리지이지
-  에디터 본체가 아닙니다.
+- **`mcp__unity__*` 툴이 보이면 에디터가 열려 있는 상태입니다.** 그것이 정상이며,
+  6장의 테스트를 그 툴로 실행하십시오. 배치 모드 명령을 쓰지 마십시오.
+- `mcp__unity__*` 툴이 **없을 때만** 6장의 배치 모드 명령을 쓰며, 그때는 에디터가 닫혀 있어야
+  합니다 (프로젝트 락 충돌).
+
+> **배치 모드는 이 환경에서 동작하지 않는 것으로 확인되었습니다** (2026-09-15).
+> `-batchmode -runTests` 실행 시 `No valid Unity Editor license found` (exit 198) 로 실패합니다.
+> 샌드박스와 무관한 라이선스 문제이므로 **MCP 경로를 우선 사용하십시오.**
 
 ### 멈춰야 할 때와 계속해야 할 때
 
@@ -836,17 +840,37 @@ so.ApplyModifiedProperties();
 
 ## 6. 테스트 계획 (Test Plan)
 
-**Unity Editor를 닫은 상태에서 실행하십시오.** 켜져 있으면 배치 모드가 프로젝트 락으로 실패합니다.
+### 6.1 기본 경로 — Unity MCP (`mcp__unity__*` 툴이 보일 때)
+
+**이 경로를 우선 사용하십시오.** 배치 모드는 이 환경에서 라이선스 오류로 실패합니다(0장 참조).
+
+1. 에셋 새로고침 / 컴파일 관련 툴을 실행해 **컴파일 에러 유무를 먼저 확인**한다.
+   에러가 있으면 그 내용을 그대로 보고하고 멈춘다.
+2. 메뉴 `BoomPG/Setup/1. 기본 에셋 생성` 과 `BoomPG/Setup/2. M1 그레이박스 씬 생성` 을
+   실행할 수 있는 툴이 있으면 실행한다. 없으면 보고에 "메뉴 실행 불가"라고 적고 넘어간다.
+3. `mcp__unity__run_tests` 로 EditMode 테스트를 실행하고 `mcp__unity__test_status` 로 결과를 받는다.
+4. **툴이 돌려준 실제 출력을 보고에 그대로 넣는다.** 추측으로 "통과"라고 쓰지 않는다.
+
+기대 결과: 테스트 **12개 전부 통과**. 특히
+`Blend_KeepStronger_PreservesStrongerCurrentVelocity` 가 통과해야 D-022 대응이 성립한다.
+
+MCP 쓰기 툴은 샌드박스 제한을 받지 않습니다. **계획서 범위 밖 파일을 MCP 로 건드리지 마십시오.**
+씬·프리팹·프로젝트 설정을 바꾸는 `set_*` 계열은 이 계획서가 명시한 것 외에는 쓰지 마십시오.
+
+### 6.2 대체 경로 — 배치 모드 (`mcp__unity__*` 툴이 없을 때만)
+
+에디터를 닫은 상태에서만 동작하며, **현재 환경에서는 라이선스 오류로 실패하는 것이 확인되었습니다.**
+그래도 시도해야 한다면 아래를 쓰고, 실패하면 실패한 출력을 그대로 보고하십시오.
 
 | 명령어 | 기대 결과 |
 |---|---|
-| `"C:\Program Files\Unity\Hub\Editor\6000.6.0f1\Editor\Unity.exe" -batchmode -runTests -projectPath "C:\개인 폴더\BoomPG" -testPlatform EditMode -testResults "C:\개인 폴더\BoomPG\Temp\m1-tests.xml" -logFile -` | 종료 코드 0. 결과 XML 의 `<test-run>` 에 `total="12" passed="12" failed="0"` |
-| `powershell -NoProfile -Command "Select-Xml -Path 'Temp\m1-tests.xml' -XPath '/test-run' \| ForEach-Object { $_.Node.total, $_.Node.passed, $_.Node.failed }"` | `12`, `12`, `0` |
-| `git status --short` | `Assets/_Project/`, `ProjectSettings/TagManager.asset` 외의 변경이 없다 |
+| `"C:\Program Files\Unity\Hub\Editor\6000.6.0f1\Editor\Unity.exe" -batchmode -runTests -projectPath "C:\개인 폴더\BoomPG" -testPlatform EditMode -testResults "C:\개인 폴더\BoomPG\Temp\m1-tests.xml" -logFile -` | 종료 코드 0. XML 의 `<test-run>` 에 `total="12" passed="12" failed="0"` |
 
-**Unity MCP(`mcp__unity__*`) 툴이 보이는 경우**: 위 배치 명령 대신 에셋 새로고침 → 컴파일 에러
-확인 → `run_tests`(EditMode) → `test_status` 를 쓰고, **툴이 돌려준 실제 출력을 보고에 그대로
-넣으십시오.** 추측으로 "통과"라고 쓰지 마십시오.
+### 6.3 공통
+
+| 명령어 | 기대 결과 |
+|---|---|
+| `git status --short` | `Assets/_Project/`, `ProjectSettings/TagManager.asset` 외의 변경이 없다 |
 
 컴파일 에러가 나면 그 지점에서 멈추고 보고하십시오. 다음 스텝으로 넘어가지 마십시오.
 
