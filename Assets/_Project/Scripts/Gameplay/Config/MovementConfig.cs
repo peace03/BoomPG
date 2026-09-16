@@ -14,6 +14,11 @@ namespace BoomPG.Gameplay.Config
         [Tooltip("공중에서의 조작력 비율. 지상 대비 이 비율만큼만 방향을 바꿀 수 있다. 높이면 넉백당한 뒤 스스로 복귀하기 쉬워져 낙사가 줄어든다 — 이 게임의 핵심 재미(P1)에 직접 영향을 준다.")]
         [Range(0f, 1f)]
         [SerializeField] private float _airControl = 0.4f;
+        [Tooltip("넉백으로 날아가는 중 좌우로 움직일 수 있는 정도 (비율). 날아가는 방향으로는 가속도 감속도 되지 않고, 이 값만큼 좌우로만 조정할 수 있다. 올리면 착지 지점을 고르기 쉬워져 낙사가 줄어든다.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float _knockbackLateralControl = 0.5f;
+        [Tooltip("넉백 중으로 판정하는 수평 속도 하한 (m/s). 이 값보다 느려지면 일반 공중 조작으로 돌아간다. 높이면 넉백이 끝났다고 판단하는 시점이 빨라진다.")]
+        [SerializeField] private float _knockbackControlThreshold = 1f;
         [Header("물리 · 감쇠")]
         [Tooltip("중력 가속도 (m/s²). 음수다. 절댓값을 키우면 낙하가 빨라져 제트팩으로 복귀할 여유가 줄어든다.")]
         [SerializeField] private float _gravity = -9.81f;
@@ -35,6 +40,12 @@ namespace BoomPG.Gameplay.Config
 
         /// <summary>AirControl 설정값 (비율).</summary>
         public float AirControl => _airControl;
+
+        /// <summary>넉백 중 좌우 조작 비율.</summary>
+        public float KnockbackLateralControl => _knockbackLateralControl;
+
+        /// <summary>넉백 판정 수평 속도 하한 (m/s).</summary>
+        public float KnockbackControlThreshold => _knockbackControlThreshold;
 
         /// <summary>Gravity 설정값 (m/s²).</summary>
         public float Gravity => _gravity;

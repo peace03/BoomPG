@@ -50,8 +50,25 @@ namespace BoomPG.Gameplay.Player
             bool grounded = IsGrounded;
             float drag = grounded ? _movementConfig.GroundDrag : _movementConfig.AirDrag;
             _externalVelocity = Vector3.MoveTowards(_externalVelocity, Vector3.zero, drag * deltaTime);
-            _inputVelocity = _moveDirection * _movementConfig.MoveSpeed *
-                (grounded ? 1f : _movementConfig.AirControl);
+            if (grounded)
+            {
+                _inputVelocity = _moveDirection * _movementConfig.MoveSpeed;
+            }
+            else
+            {
+                // 넉백 중에는 날아가는 축으로 가속·감속할 수 없게 하고 좌우만 허용한다.
+                // 반대로 입력해 브레이크를 거는 것이 가능하면 낙사의 위협이 사라진다 (gdd 23.3).
+                Vector3 horizontalKnockback = new Vector3(_externalVelocity.x, 0f, _externalVelocity.z);
+                if (horizontalKnockback.magnitude >= _movementConfig.KnockbackControlThreshold)
+                {
+                    Vector3 lateral = KnockbackCalculator.ProjectLateralInput(_moveDirection, horizontalKnockback);
+                    _inputVelocity = lateral * (_movementConfig.MoveSpeed * _movementConfig.KnockbackLateralControl);
+                }
+                else
+                {
+                    _inputVelocity = _moveDirection * _movementConfig.MoveSpeed * _movementConfig.AirControl;
+                }
+            }
             if (_hasHorizontalAssist && !grounded)
             {
                 _inputVelocity = _horizontalAssist;

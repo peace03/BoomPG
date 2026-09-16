@@ -99,6 +99,40 @@ namespace BoomPG.Tests.EditMode
             AssertVector(new Vector3(0f, 0f, 13f), Blend(18f, 4f, KnockbackBlendMode.AdditiveDamped));
         }
 
+        /// <summary>착지 지점을 조정할 수 있도록 좌우 입력의 방향과 크기를 유지한다.</summary>
+        [Test]
+        public void ProjectLateralInput_PerpendicularInput_PassesThrough()
+        {
+            Vector3 result = KnockbackCalculator.ProjectLateralInput(Vector3.right, new Vector3(0f, 0f, 18f));
+            AssertVector(Vector3.right, result);
+            Assert.AreEqual(1f, result.magnitude, 0.001f);
+        }
+
+        /// <summary>날아가는 방향으로 입력해도 넉백을 가속할 수 없다.</summary>
+        [Test]
+        public void ProjectLateralInput_ForwardInput_ReturnsZero()
+        {
+            Vector3 result = KnockbackCalculator.ProjectLateralInput(Vector3.forward, new Vector3(0f, 0f, 18f));
+            Assert.AreEqual(0f, result.magnitude, 0.001f);
+        }
+
+        /// <summary>반대 방향 입력으로 브레이크를 걸어 넉백을 취소할 수 없다.</summary>
+        [Test]
+        public void ProjectLateralInput_BackwardInput_ReturnsZero()
+        {
+            Vector3 result = KnockbackCalculator.ProjectLateralInput(Vector3.back, new Vector3(0f, 0f, 18f));
+            Assert.AreEqual(0f, result.magnitude, 0.001f);
+        }
+
+        /// <summary>수직 넉백에는 좌우 축을 정의할 수 없으므로 입력을 유지한다.</summary>
+        [Test]
+        public void ProjectLateralInput_NoHorizontalKnockback_ReturnsInput()
+        {
+            Vector3 moveDirection = Vector3.right;
+            Vector3 result = KnockbackCalculator.ProjectLateralInput(moveDirection, new Vector3(0f, 12f, 0f));
+            AssertVector(moveDirection, result);
+        }
+
         private static Vector3 Blend(float current, float incoming, KnockbackBlendMode mode)
         {
             return KnockbackCalculator.Blend(Vector3.forward * current, Vector3.forward * incoming, mode, 25f);
