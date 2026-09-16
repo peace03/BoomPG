@@ -1,17 +1,17 @@
-# TASK_PLAN — 설정 에셋 인스펙터 가독성 개선 (Header · Tooltip · Range)
+# TASK_PLAN — 마우스 커서 잠금 (테스트 편의)
 
 > 작성: Claude Code (Architect) · 구현: Codex (Executor)
 > 이 파일은 Codex의 유일한 지시서입니다. 모호한 문장이 남아 있으면 계획이 미완성입니다.
 
 ## 0. 시작 전 반드시 읽을 것
 
-`docs/rules/code-style.md` 의 **6.1 인스펙터에 노출되는 필드** 절. 이번 작업은 그 규칙을
-기존 코드에 적용하는 것입니다.
+`docs/rules/code-style.md` — 네이밍, 로깅(`GameLog`), 인스펙터 필드 규칙(6.1)
 
 ### 작업 성격
 
-**속성(attribute) 추가만 합니다.** 로직·시그니처·기본값·필드 순서를 바꾸지 마십시오.
-Unity 에디터가 열려 있어도 무방합니다.
+신규 파일 1개 + 기존 파일 1개의 소폭 수정. Unity 에디터가 열려 있어도 무방합니다.
+**씬 파일(`M1_Greybox.unity`)과 프리팹을 수정하지 마십시오.** 아래 설계는 씬을 건드리지 않고
+동작하도록 만들었습니다.
 
 ### 멈춰야 할 때와 계속해야 할 때
 
@@ -20,109 +20,131 @@ Unity 에디터가 열려 있어도 무방합니다.
 
 ## 1. 목표 (Goal)
 
-`SO_CombatConfig` 등 설정 에셋을 인스펙터에서 열면 숫자만 나열되어 있어, 어떤 값이 어떤 동작을
-바꾸는지 알 수 없다. 밸런스 수치를 플레이 중에 조정하며 체감하기로 한 [ADR-0005](../docs/decisions/ADR-0005-프로젝트-코드-구조.md)의
-의도가 실현되지 않는 상태다. 설정 클래스 3종의 모든 `[SerializeField]` 필드에 `[Header]` 로
-그룹을, `[Tooltip]` 으로 한국어 설명을, 범위가 정해진 값에는 `[Range]` 슬라이더를 붙여
-**인스펙터만 보고도 무엇을 만질지 판단할 수 있게** 한다.
+M1 그레이박스를 플레이로 검증하는 중인데, 마우스 커서가 게임 화면 위에 그대로 떠 있어
+시점을 돌리다 보면 커서가 화면 밖으로 나가 에디터의 다른 창을 클릭하게 된다. 3인칭 슈터를
+조작하는 것 자체가 어려워 테스트가 방해받는다. **게임 화면을 클릭하면 커서가 사라져 화면 중앙에
+잠기고, `Esc` 를 누르면 커서가 돌아오게** 만든다. 커서가 풀린 동안에는 시점과 이동 입력이
+들어가지 않아야 한다 — 그렇지 않으면 커서를 꺼내 인스펙터를 만지는 동안 카메라가 제멋대로 돈다.
+
+이것은 게임 기능이 아니라 **테스트 편의 장치**다. 최소한으로 만들고 씬 구성을 건드리지 않는다.
 
 ## 2. 현재 구조 분석 (Current State)
 
-- 대상 3파일은 모두 `namespace BoomPG.Gameplay.Config` 에 있고 `ScriptableObject` 를 상속한다.
-- 모든 필드가 `[SerializeField] private` 이며 읽기 전용 프로퍼티로 노출된다. **이 구조를 유지한다.**
-- 각 프로퍼티에는 이미 `///` XML 주석이 달려 있다. **그대로 둔다** — `///` 는 코드를 읽는
-  사람을 위한 것이고 `[Tooltip]` 은 인스펙터에서 값을 만지는 사람을 위한 것이라 역할이 다르다.
-- `CombatConfig.cs` 에는 `SplashBand` 구조체와 `KnockbackBlendMode` 열거형이 같은 파일에 있다.
+- `Assets/_Project/Scripts/Gameplay/Player/PlayerInputRelay.cs` 가 Input System 액션을
+  `Update` 에서 폴링해 `PlayerMotor` · `JetpackController` · `ThirdPersonCamera` · `RpgLauncher`
+  에 전달한다. 커서 관련 처리는 없다.
+- 씬 `M1_Greybox.unity` 는 `M1SetupMenu` 가 코드로 생성한 것이며, 플레이어 오브젝트에
+  위 컴포넌트들이 붙어 있다.
+- `BoomPG.Gameplay` asmdef 는 `Unity.InputSystem` 을 참조한다. 새 파일도 같은 어셈블리에 둔다.
 
 ### 지켜야 할 컨벤션
 
-- 속성 순서: `[Header]` → `[Tooltip]` → `[Range]` → `[SerializeField]`
-- `[Header]` 는 그룹의 **첫 필드에만** 붙인다
-- 툴팁은 한국어. 단위(`m`, `m/s`, `초`, `HP`, `배율`, `비율`)를 반드시 포함한다
+- 네이밍: 클래스 PascalCase / private 필드 `_camelCase`
+- 네임스페이스는 폴더와 1:1 (`Gameplay/Player/` → `BoomPG.Gameplay.Player`)
+- `Debug.Log` 직접 호출 금지. `GameLog` 를 쓴다
+- `Update` 안에서 `GetComponent`·`Find`·`Camera.main` 호출 금지
+- 인스펙터 노출 필드에는 `[Tooltip]` 한국어 설명 (code-style 6.1)
+- 주석은 한국어, **무엇이 아니라 왜**를 적는다
 - C# 파일 UTF-8(BOM 없음), 들여쓰기 공백 4칸
 
 ## 3. 영향 범위 (Files & Architecture)
 
-| 파일 | 변경 유형 |
-|---|---|
-| `Assets/_Project/Scripts/Gameplay/Config/CombatConfig.cs` | 수정 — 속성 추가 |
-| `Assets/_Project/Scripts/Gameplay/Config/MovementConfig.cs` | 수정 — 속성 추가 |
-| `Assets/_Project/Scripts/Gameplay/Config/JetpackConfig.cs` | 수정 — 속성 추가 |
+| 파일 | 변경 유형 | 역할 |
+|---|---|---|
+| `Assets/_Project/Scripts/Gameplay/Player/CursorLockController.cs` | **신규** | 커서 잠금·해제 |
+| `Assets/_Project/Scripts/Gameplay/Player/PlayerInputRelay.cs` | 수정 | 커서가 풀린 동안 입력 중계 중단 |
 
-다른 파일은 건드리지 않는다. `.asset` 파일도 수정하지 않는다
-(속성 추가는 직렬화 데이터에 영향을 주지 않는다).
+**씬·프리팹·설정 에셋은 수정하지 않는다.**
 
 ## 4. 구현 스텝 (Step-by-Step)
 
-### Step 1 — `CombatConfig.cs`
+### Step 1 — `CursorLockController` 신규 작성
 
-- 대상: `Assets/_Project/Scripts/Gameplay/Config/CombatConfig.cs`
+- 대상: `Assets/_Project/Scripts/Gameplay/Player/CursorLockController.cs`
+- 네임스페이스: `BoomPG.Gameplay.Player`
 
-**1-1. `SplashBand` 구조체의 3개 필드에 `[Tooltip]` 을 붙인다.** `[Header]` 는 붙이지 않는다.
+**씬에 배치하지 않고 자동으로 생성되게 만든다.** 이미 만들어진 `M1_Greybox.unity` 를 고치지
+않아도 동작해야 하고, 앞으로 어떤 씬에서 Play 해도 같이 따라와야 하기 때문이다.
 
-| 필드 | Tooltip |
-|---|---|
-| `_maxDistance` | `이 구간이 적용되는 폭심으로부터의 상한 거리 (m). 거리가 이 값 이하면 아래 피해·넉백이 적용된다. 배열은 반드시 오름차순이어야 한다.` |
-| `_damage` | `이 구간의 피해량 (HP). 플레이어 체력은 100이다.` |
-| `_knockbackSpeed` | `이 구간의 넉백 속도 (m/s). 폭심에 가까울수록 커야 '발밑 조준'이 의미를 갖는다.` |
+```csharp
+[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+private static void Bootstrap()
+{
+    // 씬에 배치하지 않아도 플레이 시 자동으로 붙는다. 테스트 편의 장치이므로
+    // 씬 구성을 바꾸지 않는 쪽을 택했다.
+    var host = new GameObject("[CursorLock]");
+    host.AddComponent<CursorLockController>();
+    Object.DontDestroyOnLoad(host);
+}
+```
 
-**1-2. `CombatConfig` 필드에 속성을 붙인다. 필드 순서는 현재 그대로 두고**, 아래 표의 그룹
-첫 필드에만 `[Header]` 를 붙인다.
+**공개 API**
 
-| 필드 | Header | Tooltip | Range |
-|---|---|---|---|
-| `_rocketSpeed` | `로켓` | `로켓의 초기 비행 속도 (m/s). 낮을수록 예측 조준이 필요해져 실력 차이가 드러난다. 높이면 맞히기 쉬워지는 대신 회피가 어려워진다.` | — |
-| `_rocketGravityScale` | | `로켓에 적용되는 중력 배율. 0이면 직선으로 날아가고, 높일수록 포물선이 가팔라져 원거리 조준이 어려워진다.` | `[Range(0f, 2f)]` |
-| `_reloadSeconds` | | `재장전 시간 (초). 줄이면 교전 템포가 빨라지지만 한 발의 무게감과 빗나갔을 때의 처벌이 약해진다.` | — |
-| `_explosionRadius` | `폭발 · 직격` | `폭발 판정 반경 (m). 이 안에 있는 대상이 스플래시를 받는다. 넓히면 빗나가도 효과가 닿아 쉬워지고, 좁히면 정확도 요구가 올라간다.` | — |
-| `_directHitDamage` | | `로켓이 몸에 직접 맞았을 때의 피해량 (HP). 체력 100 기준 35면 3방 처치다. 40으로 올리면 스플래시 한 번을 섞어도 처치가 되어 템포가 빨라진다.` | — |
-| `_directHitKnockback` | | `직격 시 넉백 속도 (m/s). 근접 스플래시(18)보다 낮게 두어야 '죽일까(직격) vs 떨어뜨릴까(발밑)'의 선택이 성립한다.` | — |
-| `_splashBands` | `스플래시 구간 (거리 오름차순)` | `폭심 거리에 따른 피해·넉백 표. 위에서부터 순서대로 검사해 거리가 상한 이하인 첫 구간을 적용한다. 반드시 거리 오름차순으로 유지할 것.` | — |
-| `_knockbackUpMin` | `넉백 방향` | `넉백 방향의 y 성분 하한 (비율). 항상 살짝 위로 띄워 미끄러지듯 밀리게 한다. 높이면 위로 크게 떠서 공중 체류가 길어지고, 0이면 지면을 따라 밀린다.` | `[Range(0f, 1f)]` |
-| `_selfDamageRatio` | `로켓 점프 (자가 피해)` | `자기 폭발에 받는 피해 비율. 0.5면 스플래시 피해의 절반을 받는다. 로켓 점프를 남발하면 올려서 억제한다.` | `[Range(0f, 1f)]` |
-| `_selfKnockbackRatio` | | `자기 폭발에 받는 넉백 비율. 1.0이면 남에게 주는 것과 같은 힘으로 자신이 밀린다. 올리면 로켓 점프 도달 거리가 늘어난다.` | `[Range(0f, 2f)]` |
-| `_blendMode` | `넉백 합성 (D-022)` | `폭발이 겹쳤을 때 기존 넉백과 새 넉백을 합치는 규칙. Additive=합산 후 상한 제한(반대 방향은 상쇄), KeepStronger=더 강한 쪽만 유지, AdditiveDamped=기존을 절반으로 줄인 뒤 합산. 대입 방식이 아니어야 약한 폭발이 강한 넉백을 지우지 않는다.` | — |
-| `_maxKnockbackSpeed` | | `합성된 넉백 속도의 상한 (m/s). 낮추면 연쇄 폭발로 과도하게 날아가는 것을 막지만 극적인 장면도 줄어든다. 단일 최대 넉백은 18 m/s다.` | — |
+```csharp
+/// <summary>커서가 화면 중앙에 잠겨 게임 입력을 받는 상태인가.</summary>
+public static bool IsLocked => Cursor.lockState == CursorLockMode.Locked;
+```
 
-- 완료 기준: 12개 필드 전부에 `[Tooltip]` 이 있고, 표의 6개 `[Header]` 와 4개 `[Range]` 가
-  지정한 필드에 붙어 있다. 필드 순서와 기본값이 변경되지 않았다.
+**동작 규칙**
 
-### Step 2 — `MovementConfig.cs`
+1. **플레이 시작 시에는 잠그지 않는다.** 커서가 보이는 상태로 시작한다.
+   에디터에서 Play 를 누른 직후 인스펙터를 만질 수 있어야 하기 때문이다.
+2. 커서가 **풀린 상태**에서 마우스 **왼쪽 버튼을 누르면 잠근다.**
+   ```csharp
+   Cursor.lockState = CursorLockMode.Locked;
+   Cursor.visible = false;
+   ```
+3. `Esc` 키를 누르면 **푼다.**
+   ```csharp
+   Cursor.lockState = CursorLockMode.None;
+   Cursor.visible = true;
+   ```
+4. 입력은 Input System 으로 읽는다. `Keyboard.current.escapeKey.wasPressedThisFrame` 와
+   `Mouse.current.leftButton.wasPressedThisFrame` 를 쓴다.
+   `Keyboard.current` · `Mouse.current` 가 `null` 일 수 있으므로 반드시 검사한다.
+   - `.inputactions` 에 액션을 추가하지 않는다. 이것은 게임플레이 액션이 아니라 창 제어이고,
+     `PlayerInputRelay` 가 멈춘 동안에도 동작해야 하므로 액션 맵에 의존하면 안 된다.
+5. `Esc` 검사를 클릭 검사보다 **먼저** 하고, 같은 프레임에 둘 다 처리되지 않게 한다
+   (`else if`). 그렇지 않으면 `Esc` 로 풀자마자 같은 프레임의 클릭으로 다시 잠길 수 있다.
+6. `OnApplicationFocus(bool hasFocus)` 에서 `hasFocus == false` 이면 커서를 푼다.
+   Alt+Tab 으로 다른 창에 갔다가 돌아왔을 때 커서가 잡힌 채로 남지 않게 한다.
+7. `OnDestroy` 에서 커서를 푼다. 플레이를 멈췄을 때 에디터에 커서가 없으면 곤란하다.
+8. 잠금·해제 시 `GameLog.Core($"커서 잠금: {IsLocked}")` 같은 로그는 **남기지 않는다.**
+   매 전환마다 콘솔이 지저분해지고, 지금 콘솔은 전투 로그를 읽는 용도다.
 
-- 대상: `Assets/_Project/Scripts/Gameplay/Config/MovementConfig.cs`
-- 필드 순서를 그대로 두고 아래 속성을 붙인다.
+- 완료 기준: 컴파일 통과. Play 후 게임 화면을 클릭하면 커서가 사라지고, `Esc` 로 돌아온다.
 
-| 필드 | Header | Tooltip | Range |
-|---|---|---|---|
-| `_moveSpeed` | `이동` | `지상에서의 최대 이동 속도 (m/s).` | — |
-| `_jumpHeight` | | `점프로 도달하는 최고 높이 (m). 초기 속도는 이 값과 중력으로 계산된다.` | — |
-| `_airControl` | | `공중에서의 조작력 비율. 지상 대비 이 비율만큼만 방향을 바꿀 수 있다. 높이면 넉백당한 뒤 스스로 복귀하기 쉬워져 낙사가 줄어든다 — 이 게임의 핵심 재미(P1)에 직접 영향을 준다.` | `[Range(0f, 1f)]` |
-| `_gravity` | `물리 · 감쇠` | `중력 가속도 (m/s²). 음수다. 절댓값을 키우면 낙하가 빨라져 제트팩으로 복귀할 여유가 줄어든다.` | — |
-| `_groundDrag` | | `지면에 붙어 있을 때 넉백 속도가 줄어드는 비율 (m/s per s). 높이면 밀려나도 금방 멈춘다.` | — |
-| `_airDrag` | | `공중에서 넉백 속도가 줄어드는 비율 (m/s per s). 낮을수록 오래 날아가지만 그만큼 조작 불가 시간이 길어진다. 18 m/s 넉백은 이 값이 2.5면 0이 되기까지 약 7초가 걸린다.` | — |
-| `_capsuleRadius` | `캐릭터 캡슐` | `충돌 캡슐의 반지름 (m). 바꾸면 CharacterController 컴포넌트 설정과 함께 맞춰야 한다.` | — |
-| `_capsuleHeight` | | `충돌 캡슐의 높이 (m). 바꾸면 CharacterController 컴포넌트 설정과 함께 맞춰야 한다.` | — |
+### Step 2 — `PlayerInputRelay` 가 잠금 상태를 존중하게 한다
 
-- 완료 기준: 8개 필드 전부에 `[Tooltip]`, 3개 `[Header]`, 1개 `[Range]` 가 붙어 있다.
+- 대상: `Assets/_Project/Scripts/Gameplay/Player/PlayerInputRelay.cs`
+- 변경: `Update()` 의 **맨 처음**에 아래 조기 반환을 넣는다.
 
-### Step 3 — `JetpackConfig.cs`
+```csharp
+private void Update()
+{
+    // 커서가 풀린 동안에는 입력을 중계하지 않는다.
+    // 그렇지 않으면 인스펙터를 만지는 사이에 시점이 돌아간다.
+    if (!CursorLockController.IsLocked)
+    {
+        _motor.SetMoveInput(Vector3.zero);
+        _jetpack.SetThrustInput(false, Vector3.zero);
+        return;
+    }
 
-- 대상: `Assets/_Project/Scripts/Gameplay/Config/JetpackConfig.cs`
-- 필드 순서를 그대로 두고 아래 속성을 붙인다.
+    // ... 기존 코드 ...
+}
+```
 
-| 필드 | Header | Tooltip | Range |
-|---|---|---|---|
-| `_maxFuel` | `연료` | `연료 최대치. 아래 소모 속도와 함께 총 비행 시간을 결정한다 (100 / 25 = 4초).` | — |
-| `_consumePerSecond` | | `추진 중 초당 연료 소모량. 키우면 비행 시간이 짧아져 '지금 쓸까 아껴둘까'의 압박이 커진다.` | — |
-| `_ascendSpeed` | `비행 성능` | `추진 중 상승 속도 (m/s). 낙하 속도를 이겨야 복귀가 가능하다.` | — |
-| `_horizontalSpeed` | | `추진 중 공중 수평 이동 속도 (m/s). 비행 시간과 곱해 도달 거리가 나온다 (4 m/s × 4초 = 16 m). 맵의 발판 간격이 이 거리 안에 들어와야 복귀할 수 있다.` | — |
-| `_refillDelay` | `회복` | `착지 후 연료 회복이 시작되기까지의 대기 시간 (초). 늘리면 계속 도망 다니는 플레이가 억제된다.` | — |
-| `_refillPerSecond` | | `초당 연료 회복량. 완충까지 걸리는 시간을 결정한다.` | — |
-| `_hitLockSeconds` | `피격 잠금` | `피격 직후 제트팩을 쓸 수 없는 시간 (초). 넉백당한 직후 곧바로 복귀하지 못하게 만드는 '떨어지는 공포'의 길이다. 줄이면 낙사가 크게 줄어든다.` | — |
+- `SetMoveInput(Vector3.zero)` 와 `SetThrustInput(false, ...)` 를 호출하는 이유: 잠금이 풀리기
+  직전의 입력이 남아 캐릭터가 계속 움직이는 것을 막기 위해서다. 단순히 `return` 만 하면
+  마지막 입력 값이 유지된다.
+- `_jetpack` 이 `null` 일 수 있으면 `?.` 로 호출한다. 기존 코드의 null 처리 방식을 따른다.
+- **이 외에 `PlayerInputRelay` 의 다른 부분을 수정하지 마십시오.**
 
-- 완료 기준: 7개 필드 전부에 `[Tooltip]`, 4개 `[Header]` 가 붙어 있다. `[Range]` 는 없다.
+- 완료 기준: 컴파일 통과. `Esc` 로 커서를 푼 상태에서 마우스를 움직여도 시점이 돌지 않고,
+  WASD 를 눌러도 캐릭터가 움직이지 않는다.
 
-### Step 4 — 컴파일 확인
+### Step 3 — 컴파일 확인
 
 - `mcp__unity__*` 툴이 보이면 에셋 새로고침 후 **컴파일 에러가 없는지 확인**하고 실제 출력을 보고한다.
 - 툴이 없으면 "컴파일 확인 불가"라고 보고에 적는다. 배치 모드를 시도하지 않는다
@@ -131,33 +153,39 @@ Unity 에디터가 열려 있어도 무방합니다.
 
 ## 5. 인수 조건 (Acceptance Criteria)
 
-- [ ] `CombatConfig.cs` — `SplashBand` 3개 + 본체 12개, 총 15개 필드에 `[Tooltip]` 이 있다
-- [ ] `MovementConfig.cs` — 8개 필드 전부에 `[Tooltip]` 이 있다
-- [ ] `JetpackConfig.cs` — 7개 필드 전부에 `[Tooltip]` 이 있다
-- [ ] `[Header]` 가 계획서 표대로 13개 붙어 있다 (Combat 6 · Movement 3 · Jetpack 4)
-- [ ] `[Range]` 가 5개 붙어 있다 (`_rocketGravityScale`, `_knockbackUpMin`, `_selfDamageRatio`,
-      `_selfKnockbackRatio`, `_airControl`)
-- [ ] 속성 순서가 `[Header]` → `[Tooltip]` → `[Range]` → `[SerializeField]` 이다
-- [ ] **필드 순서가 바뀌지 않았다**
-- [ ] **기본값이 바뀌지 않았다** (`= 28f`, `= 0.35f` 등 전부 그대로)
-- [ ] 프로퍼티와 `///` XML 주석이 삭제·변경되지 않았다
+- [ ] `CursorLockController.cs` 가 `Gameplay/Player/` 에 있고 네임스페이스가 `BoomPG.Gameplay.Player` 다
+- [ ] `[RuntimeInitializeOnLoadMethod]` 로 자동 생성되며, **씬 파일이 수정되지 않았다**
+- [ ] `public static bool IsLocked` 가 있다
+- [ ] 플레이 시작 시 커서가 보이는 상태다 (자동으로 잠기지 않는다)
+- [ ] 게임 화면 좌클릭 → 커서가 사라지고 중앙에 잠긴다
+- [ ] `Esc` → 커서가 다시 보인다
+- [ ] 같은 프레임에 `Esc` 와 클릭이 함께 처리되지 않는다 (`else if`)
+- [ ] 애플리케이션 포커스를 잃으면 커서가 풀린다
+- [ ] `OnDestroy` 에서 커서가 풀린다
+- [ ] 커서가 풀린 동안 마우스를 움직여도 시점이 돌지 않고, WASD 로 이동하지 않는다
+- [ ] 커서 전환 로그를 남기지 않는다
+- [ ] `.inputactions` 에 액션을 추가하지 않았다
 - [ ] 컴파일 에러가 없다
-- [ ] `git status --short` 에 위 3개 파일 외의 변경이 없다
+- [ ] `git status --short` 에 위 2개 파일 외의 변경이 없다
+      (`Assets/_Project/Data/SO_CombatConfig.asset` 은 사람이 조정 중이므로 예외)
 
 ## 6. 테스트 계획 (Test Plan)
 
 | 확인 | 기대 결과 |
 |---|---|
 | Unity MCP 로 에셋 새로고침 + 컴파일 확인 | 에러 0건 |
-| `git diff --stat` | `Config/` 아래 3개 파일만 변경 |
-| `git diff` 에서 `- ` 로 시작하는 줄 | 기존 `[SerializeField]` 줄이 속성과 함께 다시 쓰인 것 외에 삭제된 코드가 없다 |
+| `git diff --stat` | `CursorLockController.cs`(신규), `PlayerInputRelay.cs` 만 변경 |
+| `git status --short` | `M1_Greybox.unity`, `P_Rocket.prefab` 이 목록에 없다 |
+
+플레이 동작 확인은 사람이 한다. Codex 는 컴파일까지만 검증하고 보고한다.
 
 ## 7. 범위 밖 (Out of Scope)
 
-- **필드 추가·삭제·이름 변경·순서 변경** — 속성만 붙인다
-- **기본값 변경** — 밸런스는 사람이 플레이하며 조정 중이다. 코드 기본값을 건드리지 마라
-- `Assets/_Project/Data/*.asset` 파일 — 직렬화 데이터는 손대지 않는다
-- 다른 `MonoBehaviour` 의 인스펙터 필드 (`PlayerMotor` 등) — 이번 범위가 아니다.
-  같은 규칙을 적용할 가치가 있지만 별도 작업으로 분리한다
+- **씬·프리팹 수정** — `M1SetupMenu.cs` 도 고치지 않는다. 자동 생성 방식이라 필요 없다
+- `.inputactions` 수정 — 커서 제어는 게임플레이 액션이 아니다
+- 일시정지 메뉴·UI — 커서만 다룬다. `Time.timeScale` 을 건드리지 마라
+- 설정 에셋(`SO_*.asset`)의 값 — 사람이 플레이하며 조정 중이다
+- 다른 컴포넌트의 입력 처리 — `ThirdPersonCamera` 등은 `PlayerInputRelay` 를 통해서만
+  입력을 받으므로 Step 2 만으로 충분하다
 - `docs/`, `TaskPlan/`, `scripts/`, `.claude/` 아래 전부
 - git 커밋 · 브랜치 조작 — 커밋은 사람이 한다
