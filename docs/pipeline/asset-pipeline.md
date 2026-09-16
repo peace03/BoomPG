@@ -66,15 +66,48 @@ AI 생성 모델은 폴리곤 수·머티리얼 구성·스케일·피벗·본 �
 BARCO AI의 기본 출력이 **15,000 tris** 수준으로 보입니다. 최초 규격은 8,000이었으나
 이 실측을 근거로 15,000으로 개정했습니다 (ADR-0007 개정 이력 참조).
 
-> **`orm.png` 는 그대로 쓸 수 없습니다.**
-> ORM은 glTF·Unreal 표준으로 **R=Occlusion, G=Roughness, B=Metallic** 이지만,
-> URP Lit의 MaskMap은 **R=Metallic, G=Occlusion, B=Detail, A=Smoothness** 입니다.
-> 그대로 연결하면 금속감과 거칠기가 뒤집혀 보입니다.
-> 쓰려면 채널 셔플과 Roughness → Smoothness 반전(1 - R)이 필요합니다.
->
-> **카툰 렌더링(gdd 16장)에서는 Metallic·Smoothness의 비중이 낮으므로,
-> `base_color` + `normal` 만 쓰고 ORM을 버리는 편이 간단합니다.**
-> 어느 쪽으로 갈지는 첫 캐릭터를 씬에 세워 보고 정합니다.
+### 2.1.1 산출물이 여러 벌로 온다
+
+BARCO AI 워크플로우는 한 캐릭터에 대해 **여러 단계의 파일**을 함께 내려줍니다.
+로카의 경우 다음과 같았습니다.
+
+| 파일 | 폴리곤 | 리깅 | 용도 |
+|---|---|---|---|
+| `SK_Rocca.fbx` (14.5 MB) | 15,000 tris | **있음** (Mixamo 본 22개) | **← 이것을 쓴다** |
+| `Roca_Retopo.fbx` (7.7 MB) | 7,752 tris | **없음** (본 0개) | 리토폴로지 중간 산출물 |
+| `Roca_Retopo_Textures/` | — | — | 텍스처 5장 (아래) |
+
+**폴리곤이 적다고 Retopo 파일을 쓰면 안 됩니다.** 본이 하나도 없어 애니메이션을 붙일 수 없습니다.
+
+> **워크플로우 개선 여지** — 리토폴로지된 메시(7,752)에 리깅을 하면 폴리곤 절반으로
+> 같은 결과를 얻습니다. BARCO AI에서 그 조합을 받을 수 있는지, 아니면 Retopo FBX를
+> Mixamo 등에 올려 자동 리깅할 수 있는지 다음 캐릭터에서 시도해 보십시오.
+> 성공하면 규격을 8,000으로 되돌릴 수 있습니다.
+
+### 2.1.2 텍스처는 별도 파일로도 제공된다 — 추출하지 말 것
+
+FBX에 임베드된 텍스처를 Unity의 `Extract Textures...` 로 빼낼 수도 있지만,
+**원본 폴더에 이미 개별 PNG로 들어 있습니다.** 그쪽을 복사하는 편이 간단하고 확실합니다.
+
+| 원본 파일 | 복사 후 이름 | URP Lit 슬롯 |
+|---|---|---|
+| `Roca_BaseColor.png` | `T_Rocca_Albedo.png` | Base Map |
+| `Roca_Normal.png` | `T_Rocca_Normal.png` | Normal Map |
+| `Roca_MetallicSmoothness.png` | `T_Rocca_MetallicSmoothness.png` | Metallic Map |
+| `Roca_AO.png` | `T_Rocca_AO.png` | Occlusion Map |
+| `Roca_ORM.png` | **복사하지 않음** | — |
+
+전부 2048×2048 이라 규격을 만족합니다.
+
+> **`MetallicSmoothness` 가 함께 제공되므로 ORM 문제는 발생하지 않습니다.**
+> ORM(glTF·Unreal 표준: R=Occlusion, G=Roughness, B=Metallic)은 URP Lit의
+> Metallic Gloss Map(R=Metallic, A=Smoothness)과 채널 배치가 다르고 Roughness는
+> Smoothness의 반대값이라, 그대로 연결하면 거친 표면이 금속처럼 보입니다.
+> **이미 변환된 `MetallicSmoothness` 를 쓰고 `ORM` 은 무시하십시오.**
+
+복사한 뒤 Unity에서 `Ctrl+R` 로 새로고침하고, **`T_<캐릭터>_Normal` 의 Texture Type 을
+`Normal map` 으로 바꾸십시오.** 이 설정은 FBX가 아니라 **PNG 파일을 선택했을 때**
+Inspector 맨 위에 나타납니다.
 
 ### 2.2 Art 폴더 구조 (확정)
 
@@ -86,7 +119,7 @@ Assets/_Project/Art/
     Spark/
       SK_Spark.fbx
       Materials/     M_Spark.mat
-      Textures/      T_Spark_Albedo.png · T_Spark_Normal.png · T_Spark_ORM.png
+      Textures/      T_Spark_Albedo · T_Spark_Normal · T_Spark_MetallicSmoothness · T_Spark_AO
     Rocca/           같은 구성
     Gizmo/           같은 구성
   Environment/
@@ -176,16 +209,25 @@ Project 창에서 FBX를 선택하면 **Inspector 맨 아래 프리뷰 영역**�
 
 매핑이 실패하면 Configure에서 수동으로 맞추거나, 후처리(자동 리깅)를 거칩니다.
 
-### 4.6 텍스처 추출과 머티리얼
+### 4.6 텍스처와 머티리얼
 
-FBX에 텍스처가 임베드되어 있으므로 **Materials 탭에서 텍스처를 추출**해
-해당 캐릭터의 `Textures/` 폴더에 배치합니다. 임베드 상태로 두면 텍스처 임포트 설정을
-개별 조정할 수 없습니다.
+**FBX에서 추출하지 말고 원본 텍스처 폴더에서 복사합니다** (2.1.2절).
 
-- [ ] `T_<캐릭터>_Albedo` · `T_<캐릭터>_Normal` 로 이름을 맞춘다
-- [ ] Normal 맵의 Texture Type을 **Normal map** 으로 바꾼다
-- [ ] 머티리얼을 `Materials/M_<캐릭터>.mat` 로 추출하고 URP Lit를 쓴다
-- [ ] ORM은 일단 연결하지 않는다 (2.1절 주의 참조)
+- [ ] 텍스처 4장을 `Textures/` 에 `T_<캐릭터>_<채널>` 이름으로 복사한다 (ORM은 제외)
+- [ ] Unity에서 `Ctrl+R` 로 새로고침한다
+- [ ] `T_<캐릭터>_Normal` 을 선택하고 **Inspector 맨 위 Texture Type 을 `Normal map`** 으로
+      바꾼 뒤 Apply — 이 설정은 PNG를 선택했을 때만 보이며 FBX에는 없다
+- [ ] `Materials/` 에서 우클릭 → `Create > Material` → `M_<캐릭터>` 생성
+- [ ] Shader를 `Universal Render Pipeline/Lit` 으로 두고 아래를 연결한다
+
+| URP Lit 슬롯 | 텍스처 |
+|---|---|
+| Base Map | `T_<캐릭터>_Albedo` |
+| Normal Map | `T_<캐릭터>_Normal` |
+| Metallic Map | `T_<캐릭터>_MetallicSmoothness` |
+| Occlusion Map | `T_<캐릭터>_AO` |
+
+- [ ] 씬의 캐릭터 또는 프리팹의 Mesh Renderer Material 슬롯에 `M_<캐릭터>` 를 지정한다
 
 ### 4.7 실루엣 테스트
 
@@ -214,3 +256,4 @@ FBX에 텍스처가 임베드되어 있으므로 **Materials 탭에서 텍스처
 | 2026-09-16 | ADR-0006 채택. 실루엣 테스트를 반입 절차에 편입 |
 | 2026-09-16 | ADR-0007 채택. D-012 해소 — 반입 규격 확정 |
 | 2026-09-16 | 로카 실측 반영. 폴리곤 규격 8,000 → 15,000 개정, 문서 구조 정리 |
+| 2026-09-16 | 2.1.1·2.1.2 추가 — 산출물이 여러 벌로 오는 점, 텍스처는 추출 대신 복사할 것 |
