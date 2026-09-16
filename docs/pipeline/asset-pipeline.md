@@ -87,8 +87,46 @@ AI 생성 모델은 폴리곤 수·머티리얼 구성·스케일·피벗이 제
 > 어느 쪽으로 갈지는 첫 캐릭터를 씬에 세워 보고 정합니다.
 
 FBX에 텍스처가 임베드되어 있으므로, Unity 임포트 시 **Materials 탭에서 텍스처를 추출**해
-`Assets/_Project/Art/Textures/` 에 배치하십시오. 임베드 상태로 두면 텍스처 임포트 설정을
-개별 조정할 수 없습니다.
+해당 캐릭터의 `Textures/` 폴더(2.3 절)에 배치하십시오.
+임베드 상태로 두면 텍스처 임포트 설정을 개별 조정할 수 없습니다.
+
+## 2.3 Art 폴더 구조 (확정)
+
+**`Art/` 에는 원본 아트 에셋만** 둡니다. 조립된 프리팹은 `Assets/_Project/Prefabs/` 입니다.
+
+```
+Assets/_Project/Art/
+  Characters/
+    Spark/
+      SK_Spark.fbx
+      Materials/     M_Spark.mat
+      Textures/      T_Spark_Albedo.png · T_Spark_Normal.png · T_Spark_ORM.png
+    Rocca/           같은 구성
+    Gizmo/           같은 구성
+  Environment/
+    SkyYard/
+      Models/        SM_DockingArm.fbx · SM_ControlTower.fbx ...
+      Materials/
+      Textures/
+  Weapons/
+    Rpg/             SK_Rpg.fbx (캐릭터 손에 붙으므로 스킨드)
+    Rocket/          SM_Rocket.fbx
+  VFX/
+    Materials/       M_Explosion.mat ...
+    Textures/        T_Explosion_Sheet.png ...
+  Animations/
+    Locomotion/      걷기 · 달리기 · 점프 · 낙하 · 착지
+    Combat/          발사 · 재장전 · 피격 · 넉백
+    Skills/          대시 · 예비탄 · 갈고리
+```
+
+**캐릭터는 대상별로 묶고, 애니메이션은 밖에 둡니다.**
+캐릭터 폴더를 묶는 이유는 스킨(코스메틱)이 추가될 때 그 캐릭터 아래로 확장되기 때문이고,
+애니메이션을 빼는 이유는 Humanoid 리깅([ADR-0007](../decisions/ADR-0007-캐릭터-에셋-반입-규격.md))
+덕분에 **세 캐릭터가 같은 클립을 공유**하기 때문입니다. 특정 캐릭터 폴더에 넣으면 소속이 틀립니다.
+
+> 캐릭터 FBX는 스킨드 메시이므로 **`SK_` 접두**를 씁니다 (3장 명명 규칙).
+> BARCO AI 출력 파일명(`Rocca.fbx`)을 그대로 두지 말고 `SK_Rocca.fbx` 로 바꾸십시오.
 
 ## 3. 명명 규칙 (확정)
 
@@ -138,7 +176,8 @@ BARCO AI로 생성합니다. 프롬프트는 [worldbuilding.md](../design/worldb
 
 ### 4.5 배치와 임포트 설정
 
-`Assets/_Project/Art/Models/` 에 배치하고 아래 설정을 적용합니다.
+`Assets/_Project/Art/Characters/<캐릭터명>/` 에 `SK_<캐릭터명>.fbx` 로 배치하고
+(2.3 절 구조 참조) 아래 설정을 적용합니다.
 
 | 탭 | 항목 | 값 |
 |---|---|---|

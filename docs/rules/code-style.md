@@ -50,7 +50,8 @@ Assets/_Project/
   Prefabs/
   Scenes/        ← 템플릿의 Assets/Scenes/ 를 여기로 이동
   Settings/      ← 템플릿의 Assets/Settings/ 를 여기로 이동
-  Art/           Models / Materials / VFX
+  Art/           Characters / Environment / Weapons / VFX / Animations
+                 상세 구조는 pipeline/asset-pipeline.md 2.3
   Audio/
   Data/          ScriptableObject 에셋
 ```
