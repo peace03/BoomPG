@@ -65,6 +65,15 @@ namespace BoomPG.Gameplay.Player
 
         private void Update()
         {
+            // 커서가 풀린 동안에는 입력을 중계하지 않는다.
+            // 그렇지 않으면 인스펙터를 만지는 사이에 시점이 돌아간다.
+            if (!CursorLockController.IsLocked)
+            {
+                _motor.SetMoveInput(Vector3.zero);
+                _jetpack.SetThrustInput(false, Vector3.zero);
+                return;
+            }
+
             Vector2 move = _move.ReadValue<Vector2>();
             Vector3 forward = _camera.transform.forward;
             forward.y = 0f;
