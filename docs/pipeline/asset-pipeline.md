@@ -61,8 +61,34 @@ AI 생성 모델은 폴리곤 수·머티리얼 구성·스케일·피벗이 제
 > 극단적 비율을 본으로 만들면 리타게팅 시 어색해집니다.
 > 실루엣의 비대칭([ADR-0006](../decisions/ADR-0006-캐릭터-실루엣-불변.md))은 메시가 담당합니다.
 
-BARCO AI가 리깅된 FBX를 출력하는지 아직 확인되지 않았습니다.
-첫 캐릭터를 뽑을 때 확인하고, 리깅이 없으면 후처리 도구를 이 문서에 추가하십시오.
+### 2.2 BARCO AI 출력 특성 (2026-09-16 실측)
+
+로카(`Rocca.fbx`, 14.5 MB)를 분석해 확인한 내용입니다.
+
+| 항목 | 실측값 | 대응 |
+|---|---|---|
+| 포맷 | FBX Binary (Kaydara) | 규격 일치 |
+| 리깅 | **포함됨** — Mixamo 표준 본 22개 | **자동 리깅 후처리 불필요** |
+| 본 명명 | `Hips`·`Spine/1/2`·`Neck`·`Head`·`LeftArm`·`LeftForeArm`·`LeftUpLeg` 등 | Unity Humanoid 자동 매핑 규칙 |
+| 스키닝 | Skin 1 + Cluster 22 + BindPose 3 | 정상 바인딩 |
+| 본 대칭 | Left/Right 짝 완전 일치 | ADR-0006 요건 충족 |
+| 손가락 본 | 없음 | Humanoid 옵션이므로 무방 |
+| 텍스처 | **FBX에 임베드** — 2048×2048 PNG 3장 | 규격 일치 |
+| 텍스처 구성 | `base_color` · `normal` · **`orm`** | 아래 주의 |
+
+> **`orm.png` 는 그대로 쓸 수 없습니다.**
+> ORM은 glTF·Unreal 표준으로 **R=Occlusion, G=Roughness, B=Metallic** 이지만,
+> URP Lit의 MaskMap은 **R=Metallic, G=Occlusion, B=Detail, A=Smoothness** 입니다.
+> 그대로 연결하면 금속감과 거칠기가 뒤집혀 보입니다.
+> 쓰려면 채널 셔플과 Roughness → Smoothness 반전(1 - R)이 필요합니다.
+>
+> **카툰 렌더링(gdd 16장)에서는 Metallic·Smoothness의 비중이 낮으므로,
+> `base_color` + `normal` 만 쓰고 ORM을 버리는 편이 간단합니다.**
+> 어느 쪽으로 갈지는 첫 캐릭터를 씬에 세워 보고 정합니다.
+
+FBX에 텍스처가 임베드되어 있으므로, Unity 임포트 시 **Materials 탭에서 텍스처를 추출**해
+`Assets/_Project/Art/Textures/` 에 배치하십시오. 임베드 상태로 두면 텍스처 임포트 설정을
+개별 조정할 수 없습니다.
 
 ## 3. 명명 규칙 (확정)
 
