@@ -22,7 +22,7 @@ FEMALE speed-runner game character, lean athletic build, narrow waist, long legs
 ### 베이스 바디 프롬프트 (민머리 · 언더수트 · **리깅 대상**)
 
 ```
-FEMALE speed-runner game character base body, COMPLETELY BALD with no hair at all, no goggles, no helmet, face fully uncovered and clearly visible. Lean athletic build, narrow waist. Wearing ONLY a PLAIN MATTE BLACK skintight undersuit covering the body from neck to ankles, completely smooth with no panels, no seams, no decoration, no armor, no boots. Bare feet. Plain black gloves on the hands. Shoulders and knees are smooth and flat with no pods and no bulges. Detailed face: large expressive eyes, clearly defined nose and lips, smooth clean skin, neutral expression. Empty open hands, five clearly separated fingers. Full body front view, T-pose, both arms straight out horizontally at equal height. Cartoon 3D game art, plain light gray background, no shadows, whole figure visible head to feet. No distorted hands, no malformed fingers, no blurred face.
+FEMALE speed-runner game character base body, COMPLETELY BALD with no hair at all, no goggles, no helmet, face fully uncovered and clearly visible. Lean athletic build, narrow waist. Wearing ONLY a PLAIN MATTE BLACK skintight undersuit covering the body from neck to ankles, completely smooth with no panels, no seams, no decoration, no armor, no boots. Bare feet. Plain black gloves on the hands. The waist belt line and the backs of the calves are left smooth and flat with no attachments, no boosters and no bulges. Shoulders and knees are also smooth with no pods. Detailed face: large expressive eyes, clearly defined nose and lips, smooth clean skin, neutral expression. Empty open hands, five clearly separated fingers. Full body front view, T-pose, both arms straight out horizontally at equal height. Cartoon 3D game art, plain light gray background, no shadows, whole figure visible head to feet. No distorted hands, no malformed fingers, no blurred face.
 ```
 
 | 구절 | 왜 있는가 |
@@ -31,7 +31,7 @@ FEMALE speed-runner game character base body, COMPLETELY BALD with no hair at al
 | `Wearing ONLY a PLAIN MATTE BLACK skintight undersuit ... no panels, no seams, no decoration` | **스킨이 바뀌어도 남는 레이어**입니다 ([ADR-0008](../../decisions/ADR-0008-모듈러-캐릭터-구조.md)). 장식이 있으면 아머 밑으로 비쳐 스킨 교체가 어색해집니다 |
 | `Bare feet` | 부츠가 따로 옵니다 |
 | `Plain black gloves` | 장갑은 **베이스에 포함**합니다. 손은 관절이 많아 따로 바인딩하기 까다롭습니다 |
-| `Shoulders and knees are smooth and flat with no pods and no bulges` | 포드가 붙을 자리를 **평평하게 비웁니다** |
+| `The waist belt line and the backs of the calves are left smooth and flat ... Shoulders and knees are also smooth with no pods` | 부스터가 붙을 자리를 **평평하게 비웁니다.** 어깨·무릎도 함께 비워 예전 위치에 포드가 딸려 나오지 않게 합니다 |
 | `Detailed face: large expressive eyes...` | 고글이 없어 얼굴이 드러나므로 **여기서 얼굴을 확정**합니다 |
 
 ### 의상 프롬프트 (**스킨 교체 대상**)
@@ -62,15 +62,25 @@ A single hairstyle asset for a game character, shown as an isolated object with 
 A single pair of sport visor goggles for a game character, shown as an isolated object with no head and no face. Wide wraparound black lens covering the whole eye area, thick YELLOW strap band, simple blocky frame. Three or four large smooth surfaces, clean edges, no small greebles. Cartoon 3D game art, three-quarter view, plain light gray background, no shadows, whole object centered and fully visible.
 ```
 
-**어깨 포드** (1종 생성 → 좌우 복제)
+**제트팩** (**세 캐릭터 공용 파츠** — 색 중립)
 ```
-A single cylindrical shoulder thruster pod for a game character, shown as one isolated object with no body and no arm. A short thick cylinder lying horizontally on a flat dark grey mounting bracket, with a RED glowing ring on the outer end face and a YELLOW housing shell around it. Simple blocky shape, three or four large smooth plates, clean straight edges, no small greebles, no pipes. Cartoon 3D game art, three-quarter view, plain light gray background, no shadows, object centered and fully visible.
+A single jetpack backpack unit for a game character, shown as one isolated object with no body and no person. A compact rounded backpack worn high on the upper back, with two thruster nozzles angled downward and backward, a harness frame and shoulder straps. Smooth hard-surface shell built from three or four large plates, clean straight edges, no small greebles, no pipes, no bolts. COLOR: NEUTRAL DARK GREY body with off-white panels and pale glowing nozzle rings, no strong accent color. Cartoon 3D game art, three-quarter view, plain light gray background, no shadows, object centered and fully visible.
 ```
 
-**무릎 포드** (1종 생성 → 좌우 복제)
+> **색을 중립으로 고정하는 것이 이 파츠의 핵심입니다.** 세 캐릭터가 같은 메시를
+> 공유하므로 스파크의 빨강·노랑을 구우면 로카·기즈모에 못 씁니다. 캐릭터색은
+> Unity 머티리얼에서 입힙니다 — 카툰 렌더라 단색 틴트가 잘 먹습니다.
+
+**종아리 부스터** (1종 생성 → 좌우 복제)
 ```
-A single angular knee thruster pod for a game character, shown as one isolated object with no body and no leg. An angular wedge-shaped armor piece that caps the front of a knee, with a RED glowing ring on the upper end and a YELLOW housing shell over a dark grey base. Simple blocky shape, three or four large smooth plates, clean straight edges, no small greebles, no pipes. Cartoon 3D game art, three-quarter view, plain light gray background, no shadows, object centered and fully visible.
+A single calf-mounted booster unit for a game character, shown as one isolated object with no leg, no foot and no body. An elongated thruster module that straps along the back of a calf and tapers downward, with a RED glowing ring on the lower rear nozzle and a YELLOW housing shell over a dark grey strap mount. Simple blocky shape, three or four large smooth plates, clean straight edges, no small greebles, no pipes. Cartoon 3D game art, three-quarter view, plain light gray background, no shadows, object centered and fully visible.
 ```
+
+> **노즐이 아래·뒤를 향합니다.** 제트팩은 상승과 전진, 종아리 부스터는
+> 달리기와 대시(`Dash`)의 가속을 담당합니다. 어깨 포드였을 때는 추진 방향이
+> 애매했습니다.
+>
+> **허리춤 부스터는 폐기했습니다** (2026-09-17) — 등 제트팩과 기능이 겹칩니다.
 
 > **부착물 이미지는 `one isolated object with no body` 로 고정합니다.**
 > 사람이나 팔다리가 함께 그려지면 3D 에 그 조각이 딸려 나옵니다.
@@ -87,8 +97,8 @@ A single angular knee thruster pod for a game character, shown as one isolated o
 | 의상 | 부츠 | 1,500 | 2 (미러링) | 〃 또는 `Foot` 본에 강체 부착 |
 | 장비 | 헤어 | 5,000 | 1 | `Head` 본에 강체 부착 |
 | 장비 | 고글 | 1,200 | 1 | `Head` 본에 강체 부착 |
-| 장비 | 어깨 포드 | 1,000 | 2 | `LeftShoulder` · `RightShoulder` |
-| 장비 | 무릎 포드 | 1,000 | 2 | `LeftLowerLeg` · `RightLowerLeg` |
+| 장비 | **제트팩** (공용) | 1,500 | 1 | `Spine2` 또는 `Chest` |
+| 장비 | 종아리 부스터 | 1,000 | 2 | `LeftLowerLeg` · `RightLowerLeg` |
 
 **화면상 합계 약 21,700 tris 로 규격(15,000)을 넘습니다.** `Remesh` 가 0 크레딧이므로
 포드(각 1,000 → 300)와 헤어(5,000 → 2,500)를 깎아 맞춥니다.
@@ -99,8 +109,8 @@ A single angular knee thruster pod for a game character, shown as one isolated o
 |---|---|---|
 | 헤어 | **양호** | 빨강·노랑 스트릭이 살아 있고 가닥이 분리되지 않은 깔끔한 덩어리 |
 | 고글 | **양호 · 색 확인 필요** | 형태는 단순하고 좋으나 **프레임까지 노란색**으로 나왔다. 참고 이미지는 검정 프레임 + 노란 스트랩이었다 |
-| 어깨 포드 | **양호** | 노란 원통 + 빨간 발광 링 + 회색 마운트 |
-| 무릎 포드 | **양호** | 각진 웨지 + 빨간 링 |
+| ~~어깨 포드~~ | **폐기** | 형태는 양호했으나 **부스터 위치 변경(2026-09-17)으로 버림** |
+| ~~무릎 포드~~ | **폐기** | 〃 |
 
 > **파츠 분할이 통한다는 것이 이 단계에서 확인되었습니다.** 단일 오브젝트라 형태가 명확하고,
 > 여러 부위의 UV 가 한 텍스처에 섞이지 않아 **"얼굴에 머리카락 텍스처" 류의 어긋남이
@@ -114,8 +124,7 @@ A single angular knee thruster pod for a game character, shown as one isolated o
 
 | 요소 | 이미지의 처리 | 프롬프트 구절 |
 |---|---|---|
-| 어깨 추진기 | **원통형 포드가 어깨 위에 얹혀 돌출.** 빨간 발광 링 + 노란 하우징 | `Cylindrical thruster pods mounted on top of both shoulders ... RED glowing rings set in YELLOW housings` |
-| 무릎 추진기 | 각진 포드가 무릎을 덮으며 돌출. 같은 배색 | `angular thruster pods on both knees` |
+| ~~어깨·무릎 추진기~~ | 참고 이미지에서는 어깨 위 원통형 포드와 무릎 각진 포드였다 | **2026-09-17 에 허리춤·종아리로 옮겼습니다.** 배색(빨간 발광 링 + 노란 하우징)만 그대로 가져옵니다 |
 | 수트 | 무광 검정. **날카로운 기하학적 분할선**이 가슴·허벅지·종아리를 가름 | `Matte BLACK skintight bodysuit with sharp geometric panel seams` |
 | 고글 | 눈을 완전히 덮는 **넓은 검정 바이저**, 노란 스트랩이 머리 뒤로 | `Wide black visor goggles covering the eyes, with a yellow strap` |
 | 머리 | **길고 굵은 빨간 포니테일**을 높게 묶고 노란 가닥이 섞임 | `Long thick RED ponytail tied high on the head with YELLOW streaks` |
@@ -154,6 +163,8 @@ D-028 은 머리카락을 **하나의 덩어리**로 만들라고 정했고, 이
 | v5 | 2026-09-16 | 파츠를 따로 뽑아 `reference` 로 **이미지 합성**하는 구조 (폐기) |
 | v6 | 2026-09-16 | **파츠별 3D 생성으로 전환.** 이미지 합성 제거. 몸체를 민머리·고글 없음·맨얼굴로 재작성하고 붙을 자리를 평평하게 비움. 포드를 어깨/무릎 2종으로 분리 |
 | v7 | 2026-09-16 | **모듈러 구조 채택([ADR-0008](../../decisions/ADR-0008-모듈러-캐릭터-구조.md)).** 몸체를 무지 언더수트 베이스 바디로 바꾸고 의상을 아머 세트·부츠로 분리. 총 7 파츠 |
+| v8 | 2026-09-17 | **부스터를 어깨·무릎 → 허리춤·종아리로 이동.** 노즐을 후방으로 지정. 베이스 바디의 비워둘 자리도 함께 변경. 어깨·무릎 포드 3D 2종은 폐기 |
+| v9 | 2026-09-17 | **등에 공용 제트팩 추가, 허리춤 부스터 폐기.** gdd 기본 장비인데 외형에 없던 공백을 메움. 제트팩은 색 중립으로 만들어 세 캐릭터가 공유한다 |
 
 ## 개정 이력
 

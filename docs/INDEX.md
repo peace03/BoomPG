@@ -203,3 +203,5 @@ M1 그레이박스 플레이 결과 현재 수치가 쓸 만한 것으로 확인
 | 2026-09-16 | **ADR-0008 등록 — 모듈러 캐릭터 구조 채택.** 스킨 시스템 대비. ADR-0007 의 머티리얼·리깅 항목 개정, D-030 신규 등록 |
 | 2026-09-17 | 3D 생성 도구 이름을 `BARCO AI` → **`VARCO 3D`** 로 정정. ADR-0006 · ADR-0007 · worldbuilding · asset-pipeline · rules 2종 · README 총 17곳 |
 | 2026-09-17 | `pipeline/blender-parts-workflow.md` 신설 — VARCO 3D 파츠를 Blender 에서 보정·정리하는 Codex 실행용 절차서 |
+| 2026-09-17 | 스파크 부스터를 어깨·무릎 → **허리춤·종아리**로 변경. worldbuilding · asset-pipeline · prompts/spark(v8) · VARCO 노드 3개 반영 |
+| 2026-09-17 | **제트팩을 캐릭터 외형에 편입** (worldbuilding 3.0 신설) — gdd 기본 장비인데 외형 묘사에 없던 공백. ADR-0008 에 공용 파츠 절 추가, 허리춤 부스터 폐기, prompts/spark v9 |
