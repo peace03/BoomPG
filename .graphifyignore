@@ -1,0 +1,9 @@
+# graphify 스캔 제외 규칙 (.gitignore 문법)
+# .gitignore 는 자동으로 적용되므로 여기에는 "커밋은 하지만 그래프에는 넣지 않을 것"만 적는다.
+
+# Unity 패키지 의존성 목록.
+# manifest.json / packages-lock.json 은 JSON 키가 전부 노드가 되어
+# 패키지마다 dependencies·depth·source·version 이 중첩 단계별로 반복된다.
+# 파일 2개가 노드의 48%(449/942)와 커뮤니티 19개를 만들어내 클러스터링을 망친다.
+# 어떤 패키지를 쓰는지는 Packages/manifest.json 을 직접 읽는 편이 빠르다.
+Packages/
