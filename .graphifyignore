@@ -7,3 +7,10 @@
 # 파일 2개가 노드의 48%(449/942)와 커뮤니티 19개를 만들어내 클러스터링을 망친다.
 # 어떤 패키지를 쓰는지는 Packages/manifest.json 을 직접 읽는 편이 빠르다.
 Packages/
+
+# 텍스처 맵은 그래프에 넣지 않는다.
+# Albedo·Normal·MetallicSmoothness 는 픽셀 데이터라 vision 으로 읽어도
+# 탐색에 쓸 정보가 없고, 파일명에 타임스탬프가 붙어 반복할 때마다 쌓인다.
+# 아트의 의미는 prompts/*.md 와 asset-pipeline.md 로 이미 그래프에 있다.
+# 원화·참고 이미지는 제외 대상이 아니다 — 프롬프트와 실루엣 테스트의 판정 기준이다.
+**/Textures/
