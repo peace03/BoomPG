@@ -87,7 +87,7 @@ $script:KnownFileExt = @(
     '.controller','.meta','.txt','.csv','.tsv','.log','.html','.htm','.css',
     '.scss','.sql','.java','.kt','.c','.h','.hpp','.cpp','.cc','.go','.rs',
     '.rb','.php','.lua','.png','.jpg','.jpeg','.gif','.tga','.psd','.wav',
-    '.mp3','.ogg','.fbx','.obj','.blend','.dll','.exe','.gitignore','.editorconfig'
+    '.mp3','.ogg','.fbx','.obj','.blend','.dll','.exe','.gitignore','.editorconfig','.gitattributes'
 )
 
 function Test-LooksLikePath([string]$token) {
@@ -100,6 +100,10 @@ function Test-LooksLikePath([string]$token) {
     return ($script:KnownFileExt -contains $ext)
 }
 
+
+# --- 저장소 살림용 설정 파일. 게임 소스가 아니므로 허용한다 ---
+$script:AllowedConfigFiles = @('.gitignore', '.gitattributes', '.editorconfig')
+
 function Test-BashTargetAllowed([string]$rawPath) {
     $p = ConvertTo-NormalPath $rawPath
     if ([string]::IsNullOrWhiteSpace($p)) { return $true }
@@ -109,10 +113,18 @@ function Test-BashTargetAllowed([string]$rawPath) {
 
     $ext = ''
     try { $ext = [System.IO.Path]::GetExtension($p).ToLowerInvariant() } catch { $ext = '' }
+    # --- 게임 소스 트리에는 키트 예외를 적용하지 않는다 ---
+    # Unity 스크립트 폴더 이름이 Scripts 라서 scripts/ 예외에 걸리던 구멍을 막는다.
+    if ($p -match '(^|/)(assets|projectsettings|packages)/') {
+        if ($ext -eq '.md' -or $ext -eq '.markdown') { return $true }
+        return $false
+    }
     if ($ext -eq '.md' -or $ext -eq '.markdown') { return $true }
     if ($p -match '(^|/)docs/') { return $true }
     if ($p -match '(^|/)scripts/')  { return $true }
     if ($p -match '(^|/)\.claude/') { return $true }
+    $leaf = [System.IO.Path]::GetFileName($p).ToLowerInvariant()
+    if ($script:AllowedConfigFiles -contains $leaf) { return $true }
     return $false
 }
 

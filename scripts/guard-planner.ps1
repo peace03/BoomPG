@@ -41,15 +41,27 @@ if ($payload.tool_input.edits) {
 if ($paths.Count -eq 0) { exit 0 }
 
 # --- 허용 규칙: 마크다운 문서와 docs/ 아래만 ---
+
+# --- 저장소 살림용 설정 파일. 게임 소스가 아니므로 허용한다 ---
+$script:AllowedConfigFiles = @('.gitignore', '.gitattributes', '.editorconfig')
+
 function Test-PlannerAllowed([string]$p) {
     if ([string]::IsNullOrWhiteSpace($p)) { return $true }
     $norm = $p.Replace([char]92, [char]47)   # backslash -> slash (no regex)
     $ext  = [System.IO.Path]::GetExtension($norm).ToLowerInvariant()
 
+    # --- 게임 소스 트리에는 키트 예외를 적용하지 않는다 ---
+    # Unity 스크립트 폴더 이름이 Scripts 라서 scripts/ 예외에 걸리던 구멍을 막는다.
+    if ($norm -match '(^|/)(assets|projectsettings|packages)/') {
+        if ($ext -eq '.md' -or $ext -eq '.markdown') { return $true }
+        return $false
+    }
     if ($ext -eq '.md' -or $ext -eq '.markdown') { return $true }
     if ($norm -match '(^|/)docs/')               { return $true }
     if ($norm -match '(^|/)scripts/')             { return $true }
     if ($norm -match '(^|/)\.claude/')            { return $true }
+    $leaf = [System.IO.Path]::GetFileName($norm).ToLowerInvariant()
+    if ($script:AllowedConfigFiles -contains $leaf) { return $true }
     return $false
 }
 
