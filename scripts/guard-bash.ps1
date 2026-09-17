@@ -94,15 +94,22 @@ function Test-LooksLikePath([string]$token) {
     if ([string]::IsNullOrWhiteSpace($token)) { return $false }
     $t = $token.Trim().Trim([char[]]@(34, 39)).Replace([char]92, [char]47)
     if ($t -match '^\d+(\.\d+)*\.?\.?\d*$') { return $false }   # 0..2, 1.2.3 같은 숫자/범위
+    # 확장자만 있는 조각은 경로가 아니다 (f-string 등에서 잘려 나온 '.json' 같은 것).
+    # 이름이 곧 확장자인 실제 파일(.gitignore 등)은 AllowedConfigFiles 에서 따로 허용한다.
+    if ($t -match '^.[A-Za-z0-9]+$') { return $false }
     if ($t.Contains('/')) { return $true }                       # 슬래시가 있으면 경로로 본다
     $ext = ''
     try { $ext = [System.IO.Path]::GetExtension($t).ToLowerInvariant() } catch { return $false }
-    return ($script:KnownFileExt -contains $ext)
+    if (-not ($script:KnownFileExt -contains $ext)) { return $false }
+    # 슬래시가 없으면 현재 폴더의 파일을 뜻한다. 실제로 존재할 때만 경로로 본다 —
+    # console.log, System.IO.File 처럼 점 찍힌 식별자를 파일로 오인하지 않기 위함이다.
+    # 새 파일 생성은 리다이렉션 추출기가 따로 잡으므로 이 완화로 뚫리지 않는다.
+    try { return (Test-Path -LiteralPath (Join-Path $projRoot $t)) } catch { return $false }
 }
 
 
 # --- 저장소 살림용 설정 파일. 게임 소스가 아니므로 허용한다 ---
-$script:AllowedConfigFiles = @('.gitignore', '.gitattributes', '.editorconfig')
+$script:AllowedConfigFiles = @('.gitignore', '.gitattributes', '.editorconfig', '.graphifyignore')
 
 function Test-BashTargetAllowed([string]$rawPath) {
     $p = ConvertTo-NormalPath $rawPath
@@ -123,6 +130,8 @@ function Test-BashTargetAllowed([string]$rawPath) {
     if ($p -match '(^|/)docs/') { return $true }
     if ($p -match '(^|/)scripts/')  { return $true }
     if ($p -match '(^|/)\.claude/') { return $true }
+    # graphify 생성물 폴더. gitignore 대상이고 도구가 스스로 관리한다
+    if ($p -match '(^|/)graphify-out/') { return $true }
     $leaf = [System.IO.Path]::GetFileName($p).ToLowerInvariant()
     if ($script:AllowedConfigFiles -contains $leaf) { return $true }
     return $false

@@ -27,13 +27,32 @@ $cases = @(
     # --- 예외가 넓어지지 않았는지 확인한다 ---
     @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = '.env' }; Expected = 2 },
     @{ Guard = 'guard-bash'; Tool = 'Bash'; Input = @{ command = 'echo SECRET > .env' }; Expected = 2 },
+
+    # --- graphify 스캔 제외 규칙 파일 (2026-09-17) ---
+    @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = '.graphifyignore' }; Expected = 0 },
+    @{ Guard = 'guard-bash'; Tool = 'Bash'; Input = @{ command = 'echo Packages/ >> .graphifyignore' }; Expected = 0 },
+
+    # --- 점 찍힌 식별자를 파일 경로로 오인하지 않는다 (2026-09-17) ---
+    @{ Guard = 'guard-bash'; Tool = 'Bash'; Input = @{ command = 'node -e "console.log(1)"' }; Expected = 0 },
+    @{ Guard = 'guard-bash'; Tool = 'PowerShell'; Input = @{ command = 'Remove-Item x; [System.IO.File]::Exists($p)' }; Expected = 0 },
+    # 존재하는 루트 파일은 슬래시가 없어도 계속 차단한다
+    @{ Guard = 'guard-bash'; Tool = 'Bash'; Input = @{ command = 'sed -i s/a/b/ BoomPG.slnx' }; Expected = 2 },
     @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'Assets/_Project/Scripts/Foo.gitignore' }; Expected = 2 },
 
     # --- Unity 스크립트 폴더가 scripts/ 예외에 걸리던 구멍 (2026-09-17 수정) ---
     @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'Assets/_Project/Scripts/Gameplay/Player/PlayerMotor.cs' }; Expected = 2 },
     @{ Guard = 'guard-bash'; Tool = 'Bash'; Input = @{ command = 'echo x > Assets/_Project/Scripts/Core/Logging/GameLog.cs' }; Expected = 2 },
     @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'ProjectSettings/TagManager.asset' }; Expected = 2 },
-    @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'Assets/_Project/README.md' }; Expected = 0 }
+    @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'Assets/_Project/README.md' }; Expected = 0 },
+
+    # --- graphify 생성물 폴더 (2026-09-17) ---
+    @{ Guard = 'guard-bash'; Tool = 'PowerShell'; Input = @{ command = 'Remove-Item -Force graphify-out/.graphify_detect.json' }; Expected = 0 },
+    @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'graphify-out/graph.json' }; Expected = 0 },
+    @{ Guard = 'guard-planner'; Tool = 'Write'; Input = @{ file_path = 'Assets/_Project/graphify-out/x.json' }; Expected = 2 },
+
+    # --- 확장자만 있는 조각을 경로로 오탐하지 않는다 (2026-09-17) ---
+    @{ Guard = 'guard-bash'; Tool = 'PowerShell'; Input = @{ command = 'Remove-Item -Force graphify-out/a.txt; $p = f"chunk_{k}.json"' }; Expected = 0 },
+    @{ Guard = 'guard-bash'; Tool = 'Bash'; Input = @{ command = 'echo SECRET > .env' }; Expected = 2 }
 )
 
 # --- 명령을 실행하지 않고 가드에 JSON 입력만 전달한다 ---

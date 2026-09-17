@@ -43,7 +43,7 @@ if ($paths.Count -eq 0) { exit 0 }
 # --- 허용 규칙: 마크다운 문서와 docs/ 아래만 ---
 
 # --- 저장소 살림용 설정 파일. 게임 소스가 아니므로 허용한다 ---
-$script:AllowedConfigFiles = @('.gitignore', '.gitattributes', '.editorconfig')
+$script:AllowedConfigFiles = @('.gitignore', '.gitattributes', '.editorconfig', '.graphifyignore')
 
 function Test-PlannerAllowed([string]$p) {
     if ([string]::IsNullOrWhiteSpace($p)) { return $true }
@@ -60,6 +60,8 @@ function Test-PlannerAllowed([string]$p) {
     if ($norm -match '(^|/)docs/')               { return $true }
     if ($norm -match '(^|/)scripts/')             { return $true }
     if ($norm -match '(^|/)\.claude/')            { return $true }
+    # graphify 생성물 폴더. gitignore 대상이고 도구가 스스로 관리한다
+    if ($norm -match '(^|/)graphify-out/') { return $true }
     $leaf = [System.IO.Path]::GetFileName($norm).ToLowerInvariant()
     if ($script:AllowedConfigFiles -contains $leaf) { return $true }
     return $false
