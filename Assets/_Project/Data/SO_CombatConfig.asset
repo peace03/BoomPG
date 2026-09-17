@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: SO_CombatConfig
   m_EditorClassIdentifier: BoomPG.Gameplay::BoomPG.Gameplay.Config.CombatConfig
   _rocketSpeed: 28
-  _rocketGravityScale: 0.35
+  _rocketGravityScale: 0.5
   _reloadSeconds: 2.2
-  _explosionRadius: 4.5
+  _explosionRadius: 6
   _directHitDamage: 35
   _directHitKnockback: 14
   _splashBands:
@@ -31,8 +31,8 @@ MonoBehaviour:
   - _maxDistance: 4.5
     _damage: 3
     _knockbackSpeed: 4
-  _knockbackUpMin: 0.35
-  _selfDamageRatio: 0.5
+  _knockbackUpMin: 0.25
+  _selfDamageRatio: 0.234
   _selfKnockbackRatio: 1
-  _blendMode: 0
+  _blendMode: 2
   _maxKnockbackSpeed: 25
