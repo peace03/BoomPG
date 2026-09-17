@@ -32,6 +32,7 @@
 | [tech/architecture.md](tech/architecture.md) | 기술 스택, 레이어 원칙, 현재 에셋 현황, MVP 구현 순서 | 확정분 반영 |
 | [tech/networking.md](tech/networking.md) | 호스트 권위 경계, 넉백 처리 규약 | 확정분 반영 |
 | [pipeline/asset-pipeline.md](pipeline/asset-pipeline.md) | 3D 모델 · 오디오 · VFX 반입 절차, AI 생성 워크플로우 | 확정분 반영 |
+| [pipeline/blender-parts-workflow.md](pipeline/blender-parts-workflow.md) | **파츠 반입·보정 공통 워크플로우.** Codex 가 모델 파일 하나만 받아 실행하는 절차서 | 신설 |
 | [pipeline/image-prompt-guide.md](pipeline/image-prompt-guide.md) | **이미지 생성 프롬프트 규칙.** 길이 · 블록 순서 · 손과 얼굴 · 3D 생성용 제약 | 신설 |
 | [pipeline/prompts/spark.md](pipeline/prompts/spark.md) | 스파크 **7 파츠** 프롬프트 · 설계 의도 · 1차 생성 결과 | v7 |
 | [pipeline/prompts/rocca.md](pipeline/prompts/rocca.md) | 로카 프롬프트 전문 · 설계 의도 · 개정 이력 | v3 (**모듈러 미적용**) |
@@ -201,3 +202,4 @@ M1 그레이박스 플레이 결과 현재 수치가 쓸 만한 것으로 확인
 | 2026-09-16 | 프롬프트 문서 4종 신설(가이드 1 + 캐릭터 3). D-027 부분 채택(기즈모 건틀릿 분리), D-029 신규 등록 |
 | 2026-09-16 | **ADR-0008 등록 — 모듈러 캐릭터 구조 채택.** 스킨 시스템 대비. ADR-0007 의 머티리얼·리깅 항목 개정, D-030 신규 등록 |
 | 2026-09-17 | 3D 생성 도구 이름을 `BARCO AI` → **`VARCO 3D`** 로 정정. ADR-0006 · ADR-0007 · worldbuilding · asset-pipeline · rules 2종 · README 총 17곳 |
+| 2026-09-17 | `pipeline/blender-parts-workflow.md` 신설 — VARCO 3D 파츠를 Blender 에서 보정·정리하는 Codex 실행용 절차서 |
