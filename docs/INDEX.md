@@ -31,7 +31,11 @@
 |---|---|---|
 | [tech/architecture.md](tech/architecture.md) | 기술 스택, 레이어 원칙, 현재 에셋 현황, MVP 구현 순서 | 확정분 반영 |
 | [tech/networking.md](tech/networking.md) | 호스트 권위 경계, 넉백 처리 규약 | 확정분 반영 |
-| [pipeline/asset-pipeline.md](pipeline/asset-pipeline.md) | 3D 모델 · 오디오 · VFX 반입 절차 | 뼈대 |
+| [pipeline/asset-pipeline.md](pipeline/asset-pipeline.md) | 3D 모델 · 오디오 · VFX 반입 절차, AI 생성 워크플로우 | 확정분 반영 |
+| [pipeline/image-prompt-guide.md](pipeline/image-prompt-guide.md) | **이미지 생성 프롬프트 규칙.** 길이 · 블록 순서 · 손과 얼굴 · 3D 생성용 제약 | 신설 |
+| [pipeline/prompts/spark.md](pipeline/prompts/spark.md) | 스파크 **7 파츠** 프롬프트 · 설계 의도 · 1차 생성 결과 | v7 |
+| [pipeline/prompts/rocca.md](pipeline/prompts/rocca.md) | 로카 프롬프트 전문 · 설계 의도 · 개정 이력 | v3 (**모듈러 미적용**) |
+| [pipeline/prompts/gizmo.md](pipeline/prompts/gizmo.md) | 기즈모 **본체 + 건틀릿** 프롬프트 | v4 (**모듈러 미적용**) |
 
 ### 결정 기록 (ADR) — 왜 그렇게 정했는가
 
@@ -43,7 +47,8 @@
 | [ADR-0004](decisions/ADR-0004-photon-fusion-2.md) | 네트워크를 Photon Fusion 2 (Host Mode)로 한다 | 채택 |
 | [ADR-0005](decisions/ADR-0005-프로젝트-코드-구조.md) | 프로젝트 코드 구조 (폴더 · 어셈블리 · 로깅 · 테스트 · 데이터) | 채택 |
 | [ADR-0006](decisions/ADR-0006-캐릭터-실루엣-불변.md) | 캐릭터 실루엣을 스킨 불변 요소로 고정한다 | 채택 |
-| [ADR-0007](decisions/ADR-0007-캐릭터-에셋-반입-규격.md) | 캐릭터 에셋 반입 규격 (포맷 · 리깅 · 폴리곤 · 텍스처) | 채택 |
+| [ADR-0007](decisions/ADR-0007-캐릭터-에셋-반입-규격.md) | 캐릭터 에셋 반입 규격 (포맷 · 리깅 · 폴리곤 · 텍스처) | 채택 (**일부 항목 ADR-0008 이 개정**) |
+| [ADR-0008](decisions/ADR-0008-모듈러-캐릭터-구조.md) | 캐릭터를 모듈러 구조로 만든다 (베이스 바디 + 의상 + 장비) | 채택 |
 | [ADR-template](decisions/ADR-template.md) | 새 ADR을 쓸 때 복사하는 양식 | — |
 
 ### 문서 밖 (참고)
@@ -80,6 +85,27 @@
 
 > **첫 구현 계획서를 막는 결정은 모두 해소되었습니다.** M1 그레이박스 계획서를 쓸 수 있습니다.
 
+### ⓪ 아트 — 생성 진행 중
+
+VARCO 3D 1·2차 시도가 세 캐릭터 모두 반입 불가 수준으로 나와 구조를 바꿨습니다.
+원인 분석은 [asset-pipeline 2.2](pipeline/asset-pipeline.md), 채택한 구조는
+[ADR-0008](decisions/ADR-0008-모듈러-캐릭터-구조.md)에 있습니다.
+
+**확정된 것**
+
+- **D-027 (2026-09-16)** — **모듈러 파츠 분할을 채택합니다.** 파츠마다 이미지와 3D 를
+  따로 만들고 블렌더/Unity 에서 조립합니다. 베이스 바디(리깅 대상) + 의상 + 장비의
+  3 레이어 구조이며, 근거는 [ADR-0008](decisions/ADR-0008-모듈러-캐릭터-구조.md)입니다.
+- **D-028 (2026-09-16)** — 머리를 **헬멧으로 덮지 않습니다.** 머리카락은 유지하되
+  흩날리는 결 대신 **덩어리로 묶인 형태**로 설계합니다.
+
+**남은 것**
+
+| ID | 내용 | 문서 |
+|---|---|---|
+| **D-029** | **건틀릿이 빠진 기즈모 본체가 스파크와 실루엣으로 구분되는가** — 둘 다 날씬한 여성형이 된다. 실루엣 테스트에서 확인 필요 | [prompts/gizmo.md](pipeline/prompts/gizmo.md) · [asset-pipeline 4.7](pipeline/asset-pipeline.md) |
+| **D-030** | **8인 × 최대 7 파츠 = 56 드로우콜이 GTX 1050 에서 60fps 를 지키는가** — 모듈러 구조의 대가. M2 프레임 측정의 1순위 항목 | [ADR-0008](decisions/ADR-0008-모듈러-캐릭터-구조.md) |
+
 ### ① 밸런스 — **현재 기본값 유지, 아트 적용 후 재조정** (2026-09-16 결정)
 
 M1 그레이박스 플레이 결과 현재 수치가 쓸 만한 것으로 확인되었습니다. 회색 큐브 위에서는
@@ -88,12 +114,18 @@ M1 그레이박스 플레이 결과 현재 수치가 쓸 만한 것으로 확인
 
 | ID | 내용 | 현재 값 | 문서 |
 |---|---|---|---|
-| D-022 | 넉백 합성 모드 최종 선택 | `Additive` + 상한 25 m/s | [gdd 23.2](design/gdd.md) · [networking](tech/networking.md) |
+| D-022 | 넉백 합성 모드 최종 선택 | **`AdditiveDamped`** + 상한 25 m/s | [gdd 23.2](design/gdd.md) · [networking](tech/networking.md) |
 | D-013 | 직격 데미지 35 vs 40 | 35 | [gdd 22](design/gdd.md) |
 | D-024 | 로켓 점프 도달 높이 실측 (문서값 6.5 m와 계산 불일치) | 미측정 | [gdd 23.2](design/gdd.md) |
 | D-025 | 제트팩 복귀 여유 (수평 16 m vs 플랫폼 간격 15 m) | 미측정 | [gdd 23.2](design/gdd.md) |
 | D-023 | MVP "축소 3페이즈" 스케줄 재산정 | 미착수 (M2) | [gdd 23.2](design/gdd.md) |
 | D-020 | 관제탑(+18 m)이 하이리스크로 느껴지는지 | 미착수 (M3 아트) | [gdd 22](design/gdd.md) |
+
+> **2026-09-16 플레이 중 조정된 값** (아직 확정 아님, 아트 적용 후 재검토):
+> 폭발 반경 4.5 → **6 m**, 로켓 중력 스케일 0.35 → **0.5**,
+> 넉백 최소 상향 0.35 → **0.25**, 자해 비율 0.5 → **0.234**,
+> 넉백 합성 모드 `Additive` → **`AdditiveDamped`**.
+> **폭발 반경 6 m 는 gdd 본문(4.5 m)과 어긋납니다** — 확정되면 gdd 를 고쳐야 합니다.
 
 ### ② M2 전 · M2 중
 
@@ -165,3 +197,7 @@ M1 그레이박스 플레이 결과 현재 수치가 쓸 만한 것으로 확인
 | 2026-09-16 | 세계관·캐릭터 기획서 반입. D-016 기준선 확정(캐릭터 3종), D-026 신규 등록 |
 | 2026-09-16 | ADR-0006 등록. D-026 해소 — 실루엣 불변 + 실루엣 테스트를 반입 절차에 편입 |
 | 2026-09-16 | ADR-0007 등록. D-012 해소 — 캐릭터 에셋 반입 규격 확정, 아트 착수 가능 |
+| 2026-09-16 | VARCO 2차 실패 분석을 asset-pipeline 2.2 에 기록. D-027(파츠 분할) · D-028(머리 커버링) 신규 등록 |
+| 2026-09-16 | 프롬프트 문서 4종 신설(가이드 1 + 캐릭터 3). D-027 부분 채택(기즈모 건틀릿 분리), D-029 신규 등록 |
+| 2026-09-16 | **ADR-0008 등록 — 모듈러 캐릭터 구조 채택.** 스킨 시스템 대비. ADR-0007 의 머티리얼·리깅 항목 개정, D-030 신규 등록 |
+| 2026-09-17 | 3D 생성 도구 이름을 `BARCO AI` → **`VARCO 3D`** 로 정정. ADR-0006 · ADR-0007 · worldbuilding · asset-pipeline · rules 2종 · README 총 17곳 |
