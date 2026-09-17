@@ -10,7 +10,7 @@ BoomPG는 역할이 분리된 다중 에이전트 워크플로우로 만듭니�
 | 사람 (YunPyeongHwa) | 의사결정자 · 최종 검토 · 커밋 | 전부 | — |
 | Claude Code | 아키텍트 · 기획자 | `docs/**`, `TaskPlan/**`, `*.md`, `scripts/**`, `.claude/**` | 게임 소스 (`Assets/**`, `ProjectSettings/**`, `Packages/**`) |
 | Codex | 구현자 | `TaskPlan/TASK_PLAN.md`에 명시된 파일만 | 계획서 밖 파일, `docs/**`, `TaskPlan/**`, git 커밋 |
-| BARCO AI | 3D 에셋 생성 | 모델 산출물 | — |
+| VARCO 3D | 3D 에셋 생성 | 모델 산출물 | — |
 
 Claude의 소스 수정 차단은 `.claude/settings.json`의 PreToolUse 훅
 (`scripts/guard-planner.ps1`, `scripts/guard-bash.ps1`)이 담당합니다.
@@ -71,3 +71,4 @@ Codex 세션에 `mcp__unity__*` 툴이 보이면 실행 중인 Unity Editor에 �
 | 날짜 | 내용 |
 |---|---|
 | 2026-09-14 | 최초 작성 |
+| 2026-09-17 | 3D 생성 도구 이름을 `BARCO AI` → **`VARCO 3D`** 로 정정 (표기 오류) |
