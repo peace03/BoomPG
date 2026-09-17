@@ -104,3 +104,6 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Graphify 생성물 (지식 그래프) - 로컬에서 재생성 가능
+graphify-out/
