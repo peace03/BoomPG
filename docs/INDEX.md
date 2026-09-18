@@ -32,9 +32,16 @@
 | [tech/architecture.md](tech/architecture.md) | 기술 스택, 레이어 원칙, 현재 에셋 현황, MVP 구현 순서 | 확정분 반영 |
 | [tech/networking.md](tech/networking.md) | 호스트 권위 경계, 넉백 처리 규약 | 확정분 반영 |
 | [pipeline/asset-pipeline.md](pipeline/asset-pipeline.md) | 3D 모델 · 오디오 · VFX 반입 절차, AI 생성 워크플로우 | 확정분 반영 |
-| [pipeline/blender-parts-workflow.md](pipeline/blender-parts-workflow.md) | **파츠 반입·보정 공통 워크플로우.** Codex 가 모델 파일 하나만 받아 실행하는 절차서 | 신설 |
+| [pipeline/blender-parts-workflow.md](pipeline/blender-parts-workflow.md) | **파츠 보정 메인 목차.** GLB → Blender → FBX → Unity 흐름·완료 기준, 상세 7개 연결 | 개정 |
+| [pipeline/blender-parts/01-reference-analysis.md](pipeline/blender-parts/01-reference-analysis.md) | 원화 분석 요소·쉬운 설명·질문·판정표 | 신설 |
+| [pipeline/blender-parts/02-intake.md](pipeline/blender-parts/02-intake.md) | 반입 점검·원본 보존·수정본 폴더 구조 | 신설 |
+| [pipeline/blender-parts/03-mesh-editing.md](pipeline/blender-parts/03-mesh-editing.md) | 기존 메시 우선 보정·부분 재구성·형태 검증 | 신설 |
+| [pipeline/blender-parts/04-retopology.md](pipeline/blender-parts/04-retopology.md) | 전체 검사·필요 부위 면 정리·변형과 강체 분기 | 신설 |
+| [pipeline/blender-parts/05-texturing.md](pipeline/blender-parts/05-texturing.md) | UV·베이크·원화 색·미세 결·재질 채널 수정 | 신설 |
+| [pipeline/blender-parts/06-review.md](pipeline/blender-parts/06-review.md) | 수정 묶음마다 8방향 전수 확인·실패 단계 복귀 | 신설 |
+| [pipeline/blender-parts/07-export.md](pipeline/blender-parts/07-export.md) | FBX·텍스처 전달·Unity 반입 검증·최종본 규칙·보고 | 신설 |
 | [pipeline/image-prompt-guide.md](pipeline/image-prompt-guide.md) | **이미지 생성 프롬프트 규칙.** 길이 · 블록 순서 · 손과 얼굴 · 3D 생성용 제약 | 신설 |
-| [pipeline/prompts/spark.md](pipeline/prompts/spark.md) | 스파크 **7 파츠** 프롬프트 · 설계 의도 · 1차 생성 결과 | v7 |
+| [pipeline/prompts/spark.md](pipeline/prompts/spark.md) | 스파크 **전신 원화(4시점)** + **4 파츠** 프롬프트 · 설계 의도 · 1차 생성 결과 | v13 |
 | [pipeline/prompts/rocca.md](pipeline/prompts/rocca.md) | 로카 프롬프트 전문 · 설계 의도 · 개정 이력 | v3 (**모듈러 미적용**) |
 | [pipeline/prompts/gizmo.md](pipeline/prompts/gizmo.md) | 기즈모 **본체 + 건틀릿** 프롬프트 | v4 (**모듈러 미적용**) |
 
@@ -106,6 +113,7 @@ VARCO 3D 1·2차 시도가 세 캐릭터 모두 반입 불가 수준으로 나�
 |---|---|---|
 | **D-029** | **건틀릿이 빠진 기즈모 본체가 스파크와 실루엣으로 구분되는가** — 둘 다 날씬한 여성형이 된다. 실루엣 테스트에서 확인 필요 | [prompts/gizmo.md](pipeline/prompts/gizmo.md) · [asset-pipeline 4.7](pipeline/asset-pipeline.md) |
 | **D-030** | **8인 × 최대 7 파츠 = 56 드로우콜이 GTX 1050 에서 60fps 를 지키는가** — 모듈러 구조의 대가. M2 프레임 측정의 1순위 항목 | [ADR-0008](decisions/ADR-0008-모듈러-캐릭터-구조.md) |
+| **D-031** | **스파크 원화를 어느 모델로 뽑는가** — `GenerateImage`(`gpt-image-2-medium`) 로 계속 갈지, 원화만 외부 툴에서 뽑아 `upload_image` 로 넣을지. 1차 결과를 보고 판단 | [prompts/spark.md](pipeline/prompts/spark.md) |
 
 ### ① 밸런스 — **현재 기본값 유지, 아트 적용 후 재조정** (2026-09-16 결정)
 
@@ -205,3 +213,9 @@ M1 그레이박스 플레이 결과 현재 수치가 쓸 만한 것으로 확인
 | 2026-09-17 | `pipeline/blender-parts-workflow.md` 신설 — VARCO 3D 파츠를 Blender 에서 보정·정리하는 Codex 실행용 절차서 |
 | 2026-09-17 | 스파크 부스터를 어깨·무릎 → **허리춤·종아리**로 변경. worldbuilding · asset-pipeline · prompts/spark(v8) · VARCO 노드 3개 반영 |
 | 2026-09-17 | **제트팩을 캐릭터 외형에 편입** (worldbuilding 3.0 신설) — gdd 기본 장비인데 외형 묘사에 없던 공백. ADR-0008 에 공용 파츠 절 추가, 허리춤 부스터 폐기, prompts/spark v9 |
+| 2026-09-17 | 스파크 의상·장비에 **하드서피스 메카 디자인 언어** 공통 적용 (prompts/spark v10). 파츠를 따로 생성해도 디자인이 흩어지지 않게 한 구절로 묶음 |
+| 2026-09-17 | **ADR-0008 개정 — 의상 분리 철회, 통 슈트로 전환.** 몸·아머·부츠·종아리 부스터를 한 덩어리로. 7 파츠 → 4 파츠, 폴리곤 규격 충족, 드로우콜 56 → 32 로 D-030 위험 완화 |
+| 2026-09-18 | **스파크 전신 원화 프롬프트 신설(정면·후면)** — 파츠 보정이 비교할 기준 그림이 없던 공백을 메움. prompts/spark v12, D-031 신규 등록 |
+| 2026-09-18 | 스파크 원화에 **대각 2시점(좌전방·우후방) 추가** — 종아리 셸·제트팩의 두께를 정면·후면이 주지 못해 보정이 추정에 의존했다. prompts/spark v13 |
+| 2026-09-18 | Blender 파츠 워크플로우를 메인 목차 + 상세 7개로 분리. 사용자 합의·단계별 조사 근거·토큰 절약·질문 시간제한 금지 반영 |
+| 2026-09-18 | 파츠 작업의 GLB → Blender → FBX → Unity 파일 흐름, 외부 텍스처 전달과 Unity 반입 검증 반영 |
