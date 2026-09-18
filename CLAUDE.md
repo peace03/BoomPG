@@ -117,12 +117,39 @@ PLAN_COMPLETED
 Codex는 커밋할 수 없습니다 (`--sandbox workspace-write`가 `.git/` 쓰기를 차단).
 구현이 끝나면 사람이 `git diff`로 검토한 뒤 직접 커밋합니다.
 
-## graphify
+## graphify (지식 그래프)
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+`graphify-out/` 에 **문서와 코드를 함께 담은** 관계 그래프가 있습니다.
+이 프로젝트는 문서가 진실 공급원이므로 그래프의 대부분이 `docs/` 입니다.
 
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+### 찾을 때
+
+- **저장소 안을 찾기 전에 `graphify query "<질문>"` 을 먼저 실행하십시오.**
+  관계는 `graphify path "<A>" "<B>"`, 특정 개념은 `graphify explain "<개념>"`.
+  grep 이나 `GRAPH_REPORT.md` 전문보다 좁은 부분 그래프를 돌려줍니다.
+- 아래는 질의를 건너뛰어도 됩니다. **단, 건너뛴 이유를 사용자에게 한 줄로 밝히십시오.**
+  - 같은 세션에서 방금 만들었거나 읽은 파일을 고칠 때 — 경로와 내용을 이미 안다
+  - 저장소 밖 파일을 볼 때 — 그래프에 없다
+  - 파일 하나의 특정 줄을 확인·수정할 때
+- `GRAPH_REPORT.md` 전문은 넓은 구조 검토가 필요할 때만 읽습니다.
+
+### 갱신할 때 — 대상에 따라 명령이 다릅니다
+
+| 무엇을 고쳤나 | 실행할 것 | 비용 |
+|---|---|---|
+| **코드** — `Assets/**` 의 C#, `scripts/**` | `graphify update .` | AST 전용, API 비용 없음 |
+| **문서** — `docs/**`, `TaskPlan/**`, `CLAUDE.md`, `AGENTS.md`, `README.md` | **`/graphify --update`** | LLM 의미 추출, **API 비용 있음** |
+
+> **`graphify update .` 는 코드만 재추출합니다.** 문서를 고치고 이것만 돌리면
+> 노드 수가 그대로이고, 다음 질의가 **철 지난 정보를 돌려줍니다.**
+> (2026-09-18 확인 — 문서를 하루치 고친 뒤 `graphify update .` 를 돌렸으나
+> 497 노드가 그대로였고, 그래프는 7 파츠·프롬프트 v9 를 최신으로 알고 있었습니다.)
+
+**누가 무엇을 돌리는가**
+
+- **Claude(아키텍트)** 는 `.md` 만 쓰므로 거의 항상 **`/graphify --update`** 쪽입니다
+- **Codex(구현자)** 는 코드를 고치므로 `graphify update .` 쪽입니다 (`AGENTS.md` 참조)
+- 문서 갱신은 비용이 있으므로 **작업 단위가 끝날 때 한 번** 돌립니다.
+  문서 하나 고칠 때마다 돌리지 마십시오
+- 커뮤니티 이름이 자동 변경되었다는 경고가 뜨면 `graphify label` 로 이름을 다시 붙입니다
+- `graphify-out/` 은 `.gitignore` 대상이라 커밋하지 않습니다
